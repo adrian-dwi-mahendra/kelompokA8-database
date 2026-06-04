@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{% if action=='edit' %}Edit Pilihan Program Studi{% else %}Tambah Pilihan Program Studi{% endif %}{% endblock %}
+{% block topbar_title %}{% if action=='edit' %}Edit Pilihan Program Studi{% else %}Tambah Pilihan Program Studi{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{% if action=='edit' %}Edit Pilihan Program Studi{% else %}Tambah Pilihan Program Studi{% endif %}</h2>
+  <a href="{{ url_for('pilihan_prodi_list') }}" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left"></i> Kembali</a>
+</div>
+<div class="card form-card">
+  <form method="post" id="formPilihan">
+
+    <div class="form-group">
+      <label class="form-label">No. Pendaftaran *</label>
+      {% if action == 'edit' %}
+      <select class="form-control" name="no_pendaftaran" required>
+        {% for p in pendaftaran_rows %}
+        <option value="{{ p.no_pendaftaran }}" {% if data.get('no_pendaftaran')==p.no_pendaftaran %}selected{% endif %}>
+          {{ p.no_pendaftaran }} — {{ p.nama_peserta }}
+        </option>
+        {% endfor %}
+      </select>
+      {% else %}
+      <div class="typeahead-wrap">
+        <i class="bi bi-search ta-icon"></i>
+        <input class="form-control ta-input" id="ta-pend-input" type="text"
+               placeholder="Ketik No. Pendaftaran…" autocomplete="off">
+        <input type="hidden" name="no_pendaftaran" id="pend-val">
+        <div class="ta-dropdown" id="ta-pend-list"></div>
+      </div>
+      <div class="ta-confirm" id="pend-confirm"></div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Pilihan Ke *</label>
+      <select class="form-control" name="pilihan_ke" required style="max-width:160px">
+        <option value="">— Pilih —</option>
+        <option value="1" {% if data.get('pilihan_ke')==1 %}selected{% endif %}>Pilihan 1</option>
+        <option value="2" {% if data.get('pilihan_ke')==2 %}selected{% endif %}>Pilihan 2</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Program Studi *</label>
+      {% if action == 'edit' %}
+      <select class="form-control" name="id_prodi" required>
+        {% for p in prodi_rows %}
+        <option value="{{ p.id_prodi }}" {% if data.get('id_prodi')==p.id_prodi %}selected{% endif %}>
+          {{ p.id_prodi }} — {{ p.nama_prodi }} ({{ p.jenjang }}) · {{ p.nama_univ }}
+        </option>
+        {% endfor %}
+      </select>
+      {% else %}
+      <div class="typeahead-wrap">
+        <i class="bi bi-search ta-icon"></i>
+        <input class="form-control ta-input" id="ta-prodi-input" type="text"
+               placeholder="Ketik ID Prodi…" autocomplete="off">
+        <input type="hidden" name="id_prodi" id="prodi-val">
+        <div class="ta-dropdown" id="ta-prodi-list"></div>
+      </div>
+      <div class="ta-confirm" id="prodi-confirm"></div>
+      {% endif %}
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg"></i> Simpan</button>
+      <a href="{{ url_for('pilihan_prodi_list') }}" class="btn btn-ghost">Batal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if action != 'edit' %}
+<script>
+makeTypeahead({
+  inputId:    'ta-pend-input',
+  dropdownId: 'ta-pend-list',
+  hiddenId:   'pend-val',
+  confirmId:  'pend-confirm',
+  apiUrl:     '/api/search/pendaftaran',
+  required:   true,
+  labelFn:    p => p.no_pendaftaran,
+  sublabelFn: p => `${p.nama_peserta} · ${p.nisn}`,
+  valueFn:    p => p.no_pendaftaran,
+});
+makeTypeahead({
+  inputId:    'ta-prodi-input',
+  dropdownId: 'ta-prodi-list',
+  hiddenId:   'prodi-val',
+  confirmId:  'prodi-confirm',
+  apiUrl:     '/api/search/prodi',
+  required:   true,
+  labelFn:    p => p.id_prodi,
+  sublabelFn: p => `${p.nama_prodi} (${p.jenjang}) · ${p.nama_univ}`,
+  valueFn:    p => p.id_prodi,
+});
+
+document.getElementById('formPilihan').addEventListener('submit', function(e) {
+  let ok = true;
+  if (!document.getElementById('pend-val').value) {
+    e.preventDefault(); ok = false;
+    document.getElementById('pend-confirm').innerHTML =
+      '<span class="ta-tag ta-err"><i class="bi bi-x-circle"></i> Wajib dipilih dari daftar</span>';
+  }
+  if (!document.getElementById('prodi-val').value) {
+    if (ok) e.preventDefault(); ok = false;
+    document.getElementById('prodi-confirm').innerHTML =
+      '<span class="ta-tag ta-err"><i class="bi bi-x-circle"></i> Wajib dipilih dari daftar</span>';
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

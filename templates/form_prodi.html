@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if action=='edit' else 'Tambah' }} Program Studi{% endblock %}
+{% block topbar_title %}{{ 'Edit' if action=='edit' else 'Tambah' }} Program Studi{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{{ 'Edit' if action=='edit' else 'Tambah' }} Program Studi</h2>
+  <a href="{{ url_for('prodi_list') }}" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left"></i> Kembali</a>
+</div>
+<div class="card form-card">
+  <form method="post">
+    <div class="form-group">
+      <label class="form-label">ID Prodi</label>
+      {% if action == 'edit' %}
+        <div class="auto-id-wrap">
+          <input class="form-control mono" name="id_prodi" value="{{ data.get('id_prodi','') }}" readonly required>
+          <span class="auto-id-badge"><i class="bi bi-lock-fill"></i> Terkunci</span>
+        </div>
+      {% else %}
+        <div class="auto-id-wrap">
+          <input class="form-control mono" name="id_prodi" value="{{ auto_id }}" readonly required>
+          <span class="auto-id-badge"><i class="bi bi-lock-fill"></i> Auto</span>
+        </div>
+        <small class="form-hint">ID prodi dibuat otomatis oleh sistem.</small>
+      {% endif %}
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nama Program Studi *</label>
+      <input class="form-control" name="nama_prodi" value="{{ data.get('nama_prodi','') }}" required>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+      <div class="form-group">
+        <label class="form-label">Jenjang *</label>
+        <select class="form-control" name="jenjang" required>
+          {% for j in ['S-1','D-4','D-3'] %}<option value="{{ j }}" {% if data.get('jenjang')==j %}selected{% endif %}>{{ j }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kuota *</label>
+        <input class="form-control mono" name="kuota" type="number" min="1" value="{{ data.get('kuota','') }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Universitas *</label>
+        <select class="form-control" name="id_univ" required>
+          {% for u in univs %}<option value="{{ u.id_univ }}" {% if data.get('id_univ')==u.id_univ %}selected{% endif %}>{{ u.nama_univ }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg"></i> Simpan</button>
+      <a href="{{ url_for('prodi_list') }}" class="btn btn-ghost">Batal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

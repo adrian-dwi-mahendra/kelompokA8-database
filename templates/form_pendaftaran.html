@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}{% if action=='edit' %}Edit Pendaftaran{% else %}Tambah Pendaftaran{% endif %}{% endblock %}
+{% block topbar_title %}{% if action=='edit' %}Edit Pendaftaran{% else %}Tambah Pendaftaran{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{% if action=='edit' %}Edit Pendaftaran{% else %}Tambah Pendaftaran{% endif %}</h2>
+  <a href="{{ url_for('pendaftaran_list') }}" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left"></i> Kembali</a>
+</div>
+<div class="card form-card">
+  <form method="post" id="formPendaftaran">
+
+    <div class="form-group">
+      <label class="form-label">No. Pendaftaran</label>
+      <div class="auto-id-wrap">
+        <input class="form-control mono" name="no_pendaftaran" value="{{ auto_id }}" readonly required>
+        <span class="auto-id-badge"><i class="bi bi-lock-fill"></i> Auto</span>
+      </div>
+      <small class="form-hint">Nomor pendaftaran dibuat otomatis oleh sistem.</small>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">NISN Peserta *</label>
+      {% if action == 'edit' %}
+      <select class="form-control" name="nisn" required>
+        {% for p in peserta_rows %}
+        <option value="{{ p.nisn }}" {% if data.get('nisn')==p.nisn %}selected{% endif %}>{{ p.nisn }} — {{ p.nama_peserta }}</option>
+        {% endfor %}
+      </select>
+      {% else %}
+      <div class="typeahead-wrap">
+        <i class="bi bi-search ta-icon"></i>
+        <input class="form-control ta-input" id="ta-peserta-input" type="text"
+               placeholder="Ketik NISN peserta…" autocomplete="off" inputmode="numeric">
+        <input type="hidden" name="nisn" id="nisn-val">
+        <div class="ta-dropdown" id="ta-peserta-list"></div>
+      </div>
+      <div class="ta-confirm" id="peserta-confirm"></div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ID Lokasi Ujian *</label>
+      {% if action == 'edit' %}
+      <select class="form-control" name="id_lokasi" required>
+        {% for l in lokasi_rows %}
+        <option value="{{ l.id_lokasi }}" {% if data.get('id_lokasi')==l.id_lokasi %}selected{% endif %}>
+          {{ l.id_lokasi }} — {{ l.nama_ruang }} · {{ l.gedung }} · {{ l.nama_univ }}
+        </option>
+        {% endfor %}
+      </select>
+      {% else %}
+      <div class="typeahead-wrap">
+        <i class="bi bi-search ta-icon"></i>
+        <input class="form-control ta-input" id="ta-lokasi-input" type="text"
+               placeholder="Ketik ID Lokasi…" autocomplete="off">
+        <input type="hidden" name="id_lokasi" id="id-lokasi-val">
+        <div class="ta-dropdown" id="ta-lokasi-list"></div>
+      </div>
+      <div class="ta-confirm" id="lokasi-confirm"></div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Sesi *</label>
+      <select class="form-control" name="no_sesi" required>
+        {% for s in sesi_rows %}
+        <option value="{{ s.no_sesi }}" {% if data.get('no_sesi')==s.no_sesi|string %}selected{% endif %}>{{ s.waktu }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="form-group">
+        <label class="form-label">Tanggal Pendaftaran *</label>
+        <input class="form-control" name="tgl_pendaftaran" type="date" value="{{ data.get('tgl_pendaftaran','') }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tanggal Ujian *</label>
+        <input class="form-control" name="tgl_ujian" type="date" value="{{ data.get('tgl_ujian','') }}" required>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg"></i> Simpan</button>
+      <a href="{{ url_for('pendaftaran_list') }}" class="btn btn-ghost">Batal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if action != 'edit' %}
+<script>
+makeTypeahead({
+  inputId:    'ta-peserta-input',
+  dropdownId: 'ta-peserta-list',
+  hiddenId:   'nisn-val',
+  confirmId:  'peserta-confirm',
+  apiUrl:     '/api/search/peserta',
+  required:   true,
+  labelFn:    p => p.nisn,
+  sublabelFn: p => `${p.nama_peserta} · ${p.asal_sekolah} · Angkatan ${p.angkatan}`,
+  valueFn:    p => p.nisn,
+});
+makeTypeahead({
+  inputId:    'ta-lokasi-input',
+  dropdownId: 'ta-lokasi-list',
+  hiddenId:   'id-lokasi-val',
+  confirmId:  'lokasi-confirm',
+  apiUrl:     '/api/search/lokasi',
+  required:   true,
+  labelFn:    l => l.id_lokasi,
+  sublabelFn: l => `${l.gedung} · ${l.nama_ruang} · ${l.nama_univ}`,
+  valueFn:    l => l.id_lokasi,
+});
+
+document.getElementById('formPendaftaran').addEventListener('submit', function(e) {
+  let ok = true;
+  if (!document.getElementById('nisn-val').value) {
+    document.getElementById('peserta-confirm').innerHTML =
+      '<span class="ta-tag ta-err"><i class="bi bi-x-circle"></i> Wajib dipilih dari daftar</span>';
+    ok = false;
+  }
+  if (!document.getElementById('id-lokasi-val').value) {
+    document.getElementById('lokasi-confirm').innerHTML =
+      '<span class="ta-tag ta-err"><i class="bi bi-x-circle"></i> Wajib dipilih dari daftar</span>';
+    ok = false;
+  }
+  if (!ok) e.preventDefault();
+});
+</script>
+{% endif %}
+{% endblock %}

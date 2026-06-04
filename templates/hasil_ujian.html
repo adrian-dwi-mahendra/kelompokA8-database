@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+{% block title %}Hasil Ujian{% endblock %}
+{% block topbar_title %}Hasil Ujian{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Hasil Ujian</h2>
+  <p>Skor, status kelulusan, dan informasi pendaftaran peserta SNBT</p>
+</div>
+
+<!-- FILTER PANEL -->
+<form method="get" id="filterForm">
+<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:18px">
+
+  <!-- Row 1: Search + Status + Universitas + Add button -->
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="search-wrap" style="max-width:280px;flex:1 1 200px">
+      <i class="bi bi-search"></i>
+      <input class="form-control" name="q" value="{{ search }}" autocomplete="off"
+             placeholder="Cari nama / NISN…" onchange="this.form.submit()">
+    </div>
+
+    <div style="position:relative;min-width:140px">
+      <select class="form-control" name="status" onchange="this.form.submit()" style="padding-left:32px;appearance:none;-webkit-appearance:none">
+        <option value="">Semua Status</option>
+        <option value="Lulus"       {% if status=='Lulus' %}selected{% endif %}>Lulus</option>
+        <option value="Tidak Lulus" {% if status=='Tidak Lulus' %}selected{% endif %}>Tidak Lulus</option>
+      </select>
+      <i class="bi bi-funnel" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text-muted);pointer-events:none"></i>
+    </div>
+
+    <div style="position:relative;flex:1;min-width:180px;max-width:260px">
+      <select class="form-control" name="id_univ" onchange="this.form.submit()" style="padding-left:32px;appearance:none;-webkit-appearance:none">
+        <option value="">Semua Universitas</option>
+        {% for u in univs %}
+        <option value="{{ u.id_univ }}" {% if id_univ==u.id_univ %}selected{% endif %}>{{ u.nama_univ }}</option>
+        {% endfor %}
+      </select>
+      <i class="bi bi-bank" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text-muted);pointer-events:none"></i>
+    </div>
+
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      {% if search or status or id_univ or skor_min or skor_max %}
+      <a href="{{ url_for('hasil_list') }}" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-counterclockwise"></i> Reset</a>
+      {% endif %}
+      <a href="{{ url_for('hasil_tambah') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tambah Hasil</a>
+    </div>
+  </div>
+
+  <!-- Row 2: Score range (collapsed by default) -->
+  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+      <button type="button" id="skor-toggle-btn" onclick="toggleSkorFilter()"
+        style="display:flex;align-items:center;gap:7px;background:var(--navy-3);border:1px solid var(--border);
+               border-radius:8px;padding:6px 14px;cursor:pointer;color:var(--text-muted);font-size:12px;font-weight:600;
+               text-transform:uppercase;letter-spacing:.06em;transition:all .15s">
+        <i class="bi bi-sliders" style="font-size:13px"></i>
+        Filter Skor Rerata
+        <i class="bi bi-chevron-down" id="skor-toggle-icon" style="font-size:11px;transition:transform .2s"></i>
+      </button>
+      <span id="skor-range-label" style="font-size:12px;font-weight:700;color:var(--gold);font-family:'DM Mono',monospace;display:none">
+        {{ skor_min or '200' }} – {{ skor_max or '1000' }}
+      </span>
+    </div>
+
+    <div id="skor-slider-panel" style="display:none;margin-top:12px">
+      <!-- Visual range bar -->
+      <div style="position:relative;height:36px;user-select:none" id="skor-slider-wrap">
+        <!-- Track -->
+        <div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:6px;background:var(--navy-3);border-radius:3px;border:1px solid var(--border)">
+          <div id="skor-track-fill" style="position:absolute;height:100%;background:var(--gold);border-radius:3px;opacity:.7;
+            left:{{ ((( skor_min|int if skor_min else 200) - 200) / 800 * 100)|round(1) }}%;
+            right:{{ (100 - (( skor_max|int if skor_max else 1000) - 200) / 800 * 100)|round(1) }}%">
+          </div>
+        </div>
+        <!-- Thumb MIN -->
+        <div id="thumb-min" style="position:absolute;top:50%;transform:translate(-50%,-50%);width:20px;height:20px;
+             background:var(--gold);border-radius:50%;cursor:grab;border:3px solid var(--navy);box-shadow:0 0 0 2px var(--gold-dim);z-index:2;
+             left:{{ ((( skor_min|int if skor_min else 200) - 200) / 800 * 100)|round(1) }}%">
+        </div>
+        <!-- Thumb MAX -->
+        <div id="thumb-max" style="position:absolute;top:50%;transform:translate(-50%,-50%);width:20px;height:20px;
+             background:var(--navy-3);border-radius:50%;cursor:grab;border:3px solid var(--gold);box-shadow:0 0 0 2px var(--gold-dim);z-index:2;
+             left:{{ ((( skor_max|int if skor_max else 1000) - 200) / 800 * 100)|round(1) }}%">
+        </div>
+      </div>
+
+      <!-- Hidden inputs -->
+      <input type="hidden" name="skor_min" id="skor-min-val" value="{{ skor_min or '' }}">
+      <input type="hidden" name="skor_max" id="skor-max-val" value="{{ skor_max or '' }}">
+
+      <!-- Tick labels -->
+      <div style="display:flex;justify-content:space-between;margin-top:4px">
+        {% for v in [200,300,400,500,600,700,800,900,1000] %}
+        <span style="font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace">{{ v }}</span>
+        {% endfor %}
+      </div>
+
+      <!-- Apply button -->
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+        <button type="submit" class="btn btn-primary btn-sm" style="font-size:12px;padding:5px 16px">
+          <i class="bi bi-check2"></i> Terapkan Filter
+        </button>
+        {% if skor_min or skor_max %}
+        <a href="{{ request.path }}?{{ request.query_string.decode().replace('skor_min='+skor_min,'').replace('skor_max='+skor_max,'').strip('&') }}"
+           class="btn btn-ghost btn-sm" style="font-size:12px">Reset Skor</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+</form>
+
+<style>
+#thumb-min:active, #thumb-max:active { cursor:grabbing; }
+#skor-toggle-btn:hover { background:var(--navy-4); color:var(--text); border-color:rgba(245,200,66,.3); }
+</style>
+
+<script>
+function toggleSkorFilter() {
+  const panel = document.getElementById('skor-slider-panel');
+  const icon = document.getElementById('skor-toggle-icon');
+  const label = document.getElementById('skor-range-label');
+  const btn = document.getElementById('skor-toggle-btn');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  icon.style.transform = isOpen ? '' : 'rotate(180deg)';
+  label.style.display = isOpen ? 'none' : 'inline';
+  btn.style.borderColor = isOpen ? '' : 'rgba(245,200,66,.5)';
+  btn.style.color = isOpen ? '' : 'var(--gold)';
+}
+
+// Auto-open if filter is active
+(function(){
+  const minVal = document.getElementById('skor-min-val').value;
+  const maxVal = document.getElementById('skor-max-val').value;
+  if (minVal || maxVal) toggleSkorFilter();
+})();
+
+(function(){
+  const SKOR_MIN = 200, SKOR_MAX = 1000;
+  const wrap = document.getElementById('skor-slider-wrap');
+  const thumbMin = document.getElementById('thumb-min');
+  const thumbMax = document.getElementById('thumb-max');
+  const fill = document.getElementById('skor-track-fill');
+  const label = document.getElementById('skor-range-label');
+  const inMin = document.getElementById('skor-min-val');
+  const inMax = document.getElementById('skor-max-val');
+
+  let valMin = parseInt(inMin.value) || SKOR_MIN;
+  let valMax = parseInt(inMax.value) || SKOR_MAX;
+
+  function pct(v) { return ((v - SKOR_MIN) / (SKOR_MAX - SKOR_MIN)) * 100; }
+  function snap(v) { return Math.round(v / 10) * 10; }
+
+  function updateUI() {
+    const pMin = pct(valMin), pMax = pct(valMax);
+    thumbMin.style.left = pMin + '%';
+    thumbMax.style.left = pMax + '%';
+    fill.style.left  = pMin + '%';
+    fill.style.right = (100 - pMax) + '%';
+    label.textContent = valMin + ' – ' + valMax;
+  }
+
+  function drag(thumb, isMin) {
+    return function(e) {
+      e.preventDefault();
+      const rect = wrap.getBoundingClientRect();
+      function move(ev) {
+        const x = (ev.touches ? ev.touches[0].clientX : ev.clientX) - rect.left;
+        let v = snap(SKOR_MIN + (x / rect.width) * (SKOR_MAX - SKOR_MIN));
+        v = Math.max(SKOR_MIN, Math.min(SKOR_MAX, v));
+        if (isMin) { valMin = Math.min(v, valMax - 10); }
+        else        { valMax = Math.max(v, valMin + 10); }
+        updateUI();
+      }
+      function up() {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+        document.removeEventListener('touchmove', move);
+        document.removeEventListener('touchend', up);
+        inMin.value = (valMin === SKOR_MIN) ? '' : valMin;
+        inMax.value = (valMax === SKOR_MAX) ? '' : valMax;
+      }
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+      document.addEventListener('touchmove', move, {passive:false});
+      document.addEventListener('touchend', up);
+    };
+  }
+
+  thumbMin.addEventListener('mousedown', drag(thumbMin, true));
+  thumbMax.addEventListener('mousedown', drag(thumbMax, false));
+  thumbMin.addEventListener('touchstart', drag(thumbMin, true), {passive:false});
+  thumbMax.addEventListener('touchstart', drag(thumbMax, false), {passive:false});
+
+  updateUI();
+})();
+</script>
+
+<p class="table-meta">Menampilkan <strong>{{ rows|length }}</strong> hasil ujian</p>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID Hasil (PK)</th>
+        <th>No. Pendaftaran (FK)</th>
+        <th>Nama Peserta</th>
+        <th>Skor Rerata</th>
+        <th>Status</th>
+        <th>ID Prodi (FK)</th>
+        <th>Program Studi Diterima</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <!-- id_hasil PK -->
+        <td class="mono" style="color:var(--gold);font-size:12px">{{ r.id_hasil }}</td>
+
+        <!-- no_pendaftaran FK -->
+        <td class="mono" style="color:var(--cyan);font-size:12px">{{ r.no_pendaftaran }}</td>
+
+        <!-- nama peserta (konteks) -->
+        <td>
+          <div style="font-weight:600;color:#fff">{{ r.nama_peserta }}</div>
+          <div class="mono" style="font-size:11px;color:var(--text-muted)">{{ r.nisn }}</div>
+        </td>
+
+        <!-- skor_rerata -->
+        <td>
+          <span class="mono" style="font-size:15px;font-weight:700;color:
+            {% if r.skor_rerata >= 700 %}var(--green)
+            {% elif r.skor_rerata >= 600 %}var(--gold)
+            {% else %}var(--red){% endif %}">
+            {{ "%.1f"|format(r.skor_rerata) }}
+          </span>
+        </td>
+
+        <td>
+          <span class="badge {% if r.status=='Lulus' %}badge-success{% else %}badge-danger{% endif %}">
+            {{ r.status }}
+          </span>
+        </td>
+
+        <!-- id_prodi FK (NULL jika tidak lulus) -->
+        <td class="mono" style="font-size:12px;color:{% if r.id_prodi %}var(--cyan){% else %}var(--text-muted){% endif %}">
+          {{ r.id_prodi or '—' }}
+        </td>
+
+        <!-- nama prodi diterima (konteks) -->
+        <td>
+          {% if r.prodi_diterima %}
+          <div style="font-size:13px;font-weight:600;color:#fff">{{ r.prodi_diterima }}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap">
+            <span class="badge badge-info" style="font-size:10px">{{ r.jenjang_diterima }}</span>
+            {% if r.univ_diterima %}
+            <span style="font-size:11px;color:var(--text-muted)">{{ r.univ_diterima }}</span>
+            {% endif %}
+          </div>
+          {% else %}
+          <span style="color:var(--text-muted);font-size:13px">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <a href="{{ url_for('hasil_edit', id_hasil=r.id_hasil) }}" class="btn btn-ghost btn-sm btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+            <form method="post" action="{{ url_for('hasil_hapus', id_hasil=r.id_hasil) }}" onsubmit="return confirm('Hapus hasil ujian ini?')">
+              <button class="btn btn-danger btn-sm btn-icon" type="submit" title="Hapus"><i class="bi bi-trash"></i></button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="8">
+          <div class="empty-state"><i class="bi bi-trophy"></i><p>Tidak ada data.</p></div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border)">
+    <span>Total: <strong>{{ total }}</strong> data · Halaman <strong>{{ page }}/{{ max_page }}</strong></span>
+    <div style="display:flex;gap:4px">
+      {% if page > 1 %}
+        <a href="{{ request.path }}?page=1{{ '&q=' + search if search else '' }}{{ '&status=' + status if status else '' }}{{ '&id_univ=' + id_univ if id_univ else '' }}{{ '&no_sesi=' + no_sesi if no_sesi else '' }}{{ '&skor_min=' + skor_min if skor_min else '' }}{{ '&skor_max=' + skor_max if skor_max else '' }}{{ '&jenjang=' + jenjang if jenjang else '' }}{{ '&pilihan_ke=' + pilihan_ke if pilihan_ke else '' }}{{ '&angkatan=' + angkatan if angkatan else '' }}" class="btn btn-ghost btn-sm" title="Awal"><i class="bi bi-skip-backward-fill"></i></a>
+        <a href="{{ request.path }}?page={{ page-1 }}{{ '&q=' + search if search else '' }}{{ '&status=' + status if status else '' }}{{ '&id_univ=' + id_univ if id_univ else '' }}{{ '&no_sesi=' + no_sesi if no_sesi else '' }}{{ '&skor_min=' + skor_min if skor_min else '' }}{{ '&skor_max=' + skor_max if skor_max else '' }}{{ '&jenjang=' + jenjang if jenjang else '' }}{{ '&pilihan_ke=' + pilihan_ke if pilihan_ke else '' }}{{ '&angkatan=' + angkatan if angkatan else '' }}" class="btn btn-ghost btn-sm"><i class="bi bi-chevron-left"></i></a>
+      {% endif %}
+      {% if page < max_page %}
+        <a href="{{ request.path }}?page={{ page+1 }}{{ '&q=' + search if search else '' }}{{ '&status=' + status if status else '' }}{{ '&id_univ=' + id_univ if id_univ else '' }}{{ '&no_sesi=' + no_sesi if no_sesi else '' }}{{ '&skor_min=' + skor_min if skor_min else '' }}{{ '&skor_max=' + skor_max if skor_max else '' }}{{ '&jenjang=' + jenjang if jenjang else '' }}{{ '&pilihan_ke=' + pilihan_ke if pilihan_ke else '' }}{{ '&angkatan=' + angkatan if angkatan else '' }}" class="btn btn-ghost btn-sm"><i class="bi bi-chevron-right"></i></a>
+        <a href="{{ request.path }}?page={{ max_page }}{{ '&q=' + search if search else '' }}{{ '&status=' + status if status else '' }}{{ '&id_univ=' + id_univ if id_univ else '' }}{{ '&no_sesi=' + no_sesi if no_sesi else '' }}{{ '&skor_min=' + skor_min if skor_min else '' }}{{ '&skor_max=' + skor_max if skor_max else '' }}{{ '&jenjang=' + jenjang if jenjang else '' }}{{ '&pilihan_ke=' + pilihan_ke if pilihan_ke else '' }}{{ '&angkatan=' + angkatan if angkatan else '' }}" class="btn btn-ghost btn-sm" title="Akhir"><i class="bi bi-skip-forward-fill"></i></a>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

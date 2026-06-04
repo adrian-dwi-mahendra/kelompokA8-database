@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  /* Hero gradient background */
+  .dash-hero {
+    background: linear-gradient(135deg, var(--navy-3) 0%, rgba(37,53,88,0.6) 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .dash-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(245,200,66,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .dash-hero h2 { font-size: 24px; font-weight: 700; color: #fff; }
+  .dash-hero h2 span { color: var(--gold); }
+  .dash-hero p  { color: var(--text-muted); font-size: 14px; margin-top: 6px; }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 800px) { .charts-grid { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .chart-card canvas { max-height: 240px; }
+
+  .top-table-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .top-table-card .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .top-table-card .card-header h3 { font-size: 14px; font-weight: 600; color: #fff; }
+
+  .lulus-ring {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .ring-label { font-size: 28px; font-weight: 700; color: var(--gold); font-family: 'DM Mono', monospace; }
+  .ring-sub   { font-size: 12px; color: var(--text-muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="dash-hero">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div>
+      <h2>Selamat datang di <span>SNBT A-8</span></h2>
+      <p>Sistem Manajemen Database · Seleksi Nasional Berdasarkan Tes · TA 2025–2026</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="{{ url_for('analisis') }}" class="btn btn-primary"><i class="bi bi-bar-chart-line"></i> Lihat Analisis</a>
+      <a href="{{ url_for('peserta_list') }}" class="btn btn-ghost"><i class="bi bi-people"></i> Data Peserta</a>
+    </div>
+  </div>
+</div>
+
+<!-- Stat Grid -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="accent-line" style="background:var(--cyan)"></div>
+    <div class="stat-icon" style="background:rgba(56,189,248,.12);color:var(--cyan)"><i class="bi bi-people-fill"></i></div>
+    <div class="stat-value mono">{{ stats.total_peserta }}</div>
+    <div class="stat-label">Total Peserta</div>
+  </div>
+  <div class="stat-card">
+    <div class="accent-line" style="background:var(--gold)"></div>
+    <div class="stat-icon" style="background:rgba(245,200,66,.12);color:var(--gold)"><i class="bi bi-clipboard-check-fill"></i></div>
+    <div class="stat-value mono">{{ stats.total_pendaftaran }}</div>
+    <div class="stat-label">Total Pendaftaran</div>
+  </div>
+  <div class="stat-card">
+    <div class="accent-line" style="background:var(--green)"></div>
+    <div class="stat-icon" style="background:rgba(74,222,128,.12);color:var(--green)"><i class="bi bi-trophy-fill"></i></div>
+    <div class="stat-value mono">{{ stats.total_lulus }}</div>
+    <div class="stat-label">Peserta Lulus</div>
+  </div>
+  <div class="stat-card">
+    <div class="accent-line" style="background:var(--red)"></div>
+    <div class="stat-icon" style="background:rgba(248,113,113,.12);color:var(--red)"><i class="bi bi-x-circle-fill"></i></div>
+    <div class="stat-value mono">{{ stats.total_tidak_lulus }}</div>
+    <div class="stat-label">Tidak Lulus</div>
+  </div>
+  <div class="stat-card">
+    <div class="accent-line" style="background:#a78bfa"></div>
+    <div class="stat-icon" style="background:rgba(167,139,250,.12);color:#a78bfa"><i class="bi bi-graph-up-arrow"></i></div>
+    <div class="stat-value mono">{{ stats.avg_skor }}</div>
+    <div class="stat-label">Rata-rata Skor</div>
+  </div>
+  <div class="stat-card">
+    <div class="accent-line" style="background:#fb923c"></div>
+    <div class="stat-icon" style="background:rgba(251,146,60,.12);color:#fb923c"><i class="bi bi-bank2"></i></div>
+    <div class="stat-value mono">{{ stats.total_universitas }}</div>
+    <div class="stat-label">Universitas</div>
+  </div>
+  <div class="stat-card">
+    <div class="accent-line" style="background:#34d399"></div>
+    <div class="stat-icon" style="background:rgba(52,211,153,.12);color:#34d399"><i class="bi bi-mortarboard-fill"></i></div>
+    <div class="stat-value mono">{{ stats.total_prodi }}</div>
+    <div class="stat-label">Program Studi</div>
+  </div>
+  <div class="stat-card">
+    <div class="accent-line" style="background:#60a5fa"></div>
+    <div class="stat-icon" style="background:rgba(96,165,250,.12);color:#60a5fa"><i class="bi bi-arrow-up-circle-fill"></i></div>
+    <div class="stat-value mono">{{ stats.max_skor }}</div>
+    <div class="stat-label">Skor Tertinggi</div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="charts-grid">
+  <!-- Chart 1: Rata-rata skor per universitas (lulus) -->
+  <div class="chart-card">
+    <div class="card-title"><i class="bi bi-bar-chart" style="color:var(--gold)"></i> &nbsp;Rata-rata Skor per Universitas (Lulus)</div>
+    <canvas id="univChart"></canvas>
+  </div>
+
+  <!-- Chart 2: Perbandingan lulus per angkatan -->
+  <div class="chart-card">
+    <div class="card-title"><i class="bi bi-pie-chart" style="color:var(--cyan)"></i> &nbsp;Perbandingan Lulus / Tidak Lulus per Angkatan</div>
+    <canvas id="angkatanChart"></canvas>
+  </div>
+</div>
+
+<!-- Top Peserta Table -->
+<div class="top-table-card">
+  <div class="card-header">
+    <h3><i class="bi bi-trophy" style="color:var(--gold)"></i> &nbsp;Top 5 Peserta — Skor Tertinggi (Lulus)</h3>
+    <a href="{{ url_for('analisis') }}#q5" class="btn btn-ghost btn-sm">Lihat Semua <i class="bi bi-arrow-right"></i></a>
+  </div>
+  {% if top_peserta %}
+  <div class="table-wrap" style="border:none;border-radius:0">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nama Peserta</th>
+          <th>Asal Sekolah</th>
+          <th>Program Studi</th>
+          <th>Universitas</th>
+          <th>Skor</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in top_peserta %}
+        <tr>
+          <td>
+            <span class="mono rank-{{ loop.index }}" style="font-weight:700">
+              {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+            </span>
+          </td>
+          <td style="font-weight:600;color:#fff">{{ r.nama_peserta }}</td>
+          <td style="font-size:12px;color:var(--text-muted)">{{ r.asal_sekolah }}</td>
+          <td><span class="badge badge-info">{{ r.jurusan or '-' }}</span></td>
+          <td style="font-size:12px">{{ r.nama_univ or '-' }}</td>
+          <td>
+            <div class="skor-bar-wrap">
+              <span class="mono" style="color:var(--gold);font-weight:700;font-size:14px">{{ "%.2f"|format(r.skor_rerata) }}</span>
+              <div class="skor-bar" style="width:{{ ((r.skor_rerata - 400) / 500 * 60)|int }}px"></div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="bi bi-inbox"></i><p>Belum ada data hasil ujian.</p></div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CHART_DEFAULTS = {
+  plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'Sora', size: 12 } } } },
+  scales: {
+    x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+    y: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+  }
+};
+
+// Chart 1 – Bar: Rata-rata skor per universitas
+const univData = {{ univ_chart | tojson }};
+new Chart(document.getElementById('univChart'), {
+  type: 'bar',
+  data: {
+    labels: univData.map(d => d.nama_univ.replace('Universitas ', 'Univ. ').replace('Institut Teknologi ', 'IT ')),
+    datasets: [{
+      label: 'Rata-rata Skor',
+      data: univData.map(d => d.rata_skor),
+      backgroundColor: 'rgba(245,200,66,0.75)',
+      borderColor: '#f5c842',
+      borderWidth: 1.5,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    ...CHART_DEFAULTS,
+    plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } },
+    scales: {
+      x: { ...CHART_DEFAULTS.scales.x },
+      y: { ...CHART_DEFAULTS.scales.y, min: 600, suggestedMax: 900 }
+    }
+  }
+});
+
+// Chart 2 – Grouped bar: lulus vs tidak lulus per angkatan
+const angData = {{ angkatan_chart | tojson }};
+new Chart(document.getElementById('angkatanChart'), {
+  type: 'bar',
+  data: {
+    labels: angData.map(d => 'Angkatan ' + d.angkatan),
+    datasets: [
+      {
+        label: 'Lulus',
+        data: angData.map(d => d.lulus),
+        backgroundColor: 'rgba(74,222,128,0.7)',
+        borderColor: '#4ade80',
+        borderWidth: 1.5,
+        borderRadius: 5,
+      },
+      {
+        label: 'Tidak Lulus',
+        data: angData.map(d => d.tidak_lulus),
+        backgroundColor: 'rgba(248,113,113,0.7)',
+        borderColor: '#f87171',
+        borderWidth: 1.5,
+        borderRadius: 5,
+      }
+    ]
+  },
+  options: {
+    ...CHART_DEFAULTS,
+    plugins: {
+      legend: { labels: { color: '#94a3b8', font: { family: 'Sora', size: 12 } } }
+    },
+    scales: {
+      x: CHART_DEFAULTS.scales.x,
+      y: CHART_DEFAULTS.scales.y
+    }
+  }
+});
+</script>
+{% endblock %}

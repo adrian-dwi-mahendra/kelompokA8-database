@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{% if action=='edit' %}Edit Pengawas{% else %}Tambah Pengawas{% endif %}{% endblock %}
+{% block topbar_title %}{% if action=='edit' %}Edit Pengawas{% else %}Tambah Pengawas{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{% if action=='edit' %}Edit Pengawas{% else %}Tambah Pengawas{% endif %}</h2>
+  <a href="{{ url_for('pengawas_list') }}" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left"></i> Kembali</a>
+</div>
+<div class="card form-card">
+  <form method="post" id="formPengawas">
+
+    <div class="form-group">
+      <label class="form-label">ID Pengawas</label>
+      <div class="auto-id-wrap">
+        <input class="form-control mono" name="id_pengawas" value="{{ auto_id }}" readonly required>
+        <span class="auto-id-badge"><i class="bi bi-lock-fill"></i> Auto</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Nama Pengawas *</label>
+      <input class="form-control" name="nama_pengawas" value="{{ data.get('nama_pengawas','') }}" required placeholder="Nama lengkap pengawas">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Lokasi Tugas *</label>
+      {% if action == 'edit' %}
+      <select class="form-control" name="id_lokasi" required>
+        {% for l in lokasis %}
+        <option value="{{ l.id_lokasi }}" {% if data.get('id_lokasi')==l.id_lokasi %}selected{% endif %}>
+          {{ l.id_lokasi }} — {{ l.nama_ruang }} · {{ l.gedung }} · {{ l.nama_univ }}
+        </option>
+        {% endfor %}
+      </select>
+      {% else %}
+      <div class="typeahead-wrap">
+        <i class="bi bi-search ta-icon"></i>
+        <input class="form-control ta-input" id="ta-lokasi-input" type="text"
+               placeholder="Ketik ID Lokasi…" autocomplete="off">
+        <input type="hidden" name="id_lokasi" id="id-lokasi-val">
+        <div class="ta-dropdown" id="ta-lokasi-list"></div>
+      </div>
+      <div class="ta-confirm" id="lokasi-confirm"></div>
+      {% endif %}
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg"></i> Simpan</button>
+      <a href="{{ url_for('pengawas_list') }}" class="btn btn-ghost">Batal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if action != 'edit' %}
+<script>
+makeTypeahead({
+  inputId:    'ta-lokasi-input',
+  dropdownId: 'ta-lokasi-list',
+  hiddenId:   'id-lokasi-val',
+  confirmId:  'lokasi-confirm',
+  apiUrl:     '/api/search/lokasi',
+  required:   true,
+  labelFn:    l => l.id_lokasi,
+  sublabelFn: l => `${l.gedung} · ${l.nama_ruang} · ${l.nama_univ}`,
+  valueFn:    l => l.id_lokasi,
+});
+
+document.getElementById('formPengawas').addEventListener('submit', function(e) {
+  if (!document.getElementById('id-lokasi-val').value) {
+    e.preventDefault();
+    document.getElementById('lokasi-confirm').innerHTML =
+      '<span class="ta-tag ta-err"><i class="bi bi-x-circle"></i> Wajib dipilih dari daftar</span>';
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

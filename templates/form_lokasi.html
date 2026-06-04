@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{% if action=='edit' %}Edit Lokasi{% else %}Tambah Lokasi{% endif %}{% endblock %}
+{% block topbar_title %}{% if action=='edit' %}Edit Lokasi{% else %}Tambah Lokasi{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{% if action=='edit' %}Edit Lokasi Ujian{% else %}Tambah Lokasi Ujian{% endif %}</h2>
+  <a href="{{ url_for('lokasi_list') }}" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left"></i> Kembali</a>
+</div>
+<div class="card form-card">
+  <form method="post">
+    <div class="form-group">
+      <label class="form-label">ID Lokasi</label>
+      <div class="auto-id-wrap">
+        <input class="form-control mono" name="id_lokasi" value="{{ auto_id }}" {% if action=='edit' %}readonly{% endif %} required>
+        <span class="auto-id-badge"><i class="bi bi-lock-fill"></i> Auto</span>
+      </div>
+      <small class="form-hint">ID lokasi dibuat otomatis oleh sistem.</small>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nama Ruang *</label>
+      <input class="form-control" name="nama_ruang" value="{{ data.get('nama_ruang','') }}" required placeholder="Contoh: Ruang A-101">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Gedung *</label>
+      <input class="form-control" name="gedung" value="{{ data.get('gedung','') }}" required placeholder="Contoh: Gedung Rektorat">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Universitas *</label>
+      <select class="form-control" name="id_univ" required>
+        {% for u in univs %}<option value="{{ u.id_univ }}" {% if data.get('id_univ')==u.id_univ %}selected{% endif %}>{{ u.nama_univ }}</option>{% endfor %}
+      </select>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg"></i> Simpan</button>
+      <a href="{{ url_for('lokasi_list') }}" class="btn btn-ghost">Batal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

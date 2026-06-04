@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if action=='edit' else 'Tambah' }} Universitas{% endblock %}
+{% block topbar_title %}{{ 'Edit' if action=='edit' else 'Tambah' }} Universitas{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{{ 'Edit' if action=='edit' else 'Tambah' }} Universitas</h2>
+  <a href="{{ url_for('universitas_list') }}" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left"></i> Kembali</a>
+</div>
+<div class="card form-card">
+  <form method="post">
+    <div class="form-group">
+      <label class="form-label">ID Universitas</label>
+      {% if action == 'edit' %}
+        <div class="auto-id-wrap">
+          <input class="form-control mono" name="id_univ" value="{{ data.get('id_univ','') }}" readonly required>
+          <span class="auto-id-badge"><i class="bi bi-lock-fill"></i> Terkunci</span>
+        </div>
+      {% else %}
+        <div class="auto-id-wrap">
+          <input class="form-control mono" name="id_univ" value="{{ auto_id }}" readonly required>
+          <span class="auto-id-badge"><i class="bi bi-lock-fill"></i> Auto</span>
+        </div>
+        <small class="form-hint">ID universitas dibuat otomatis oleh sistem.</small>
+      {% endif %}
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nama Universitas *</label>
+      <input class="form-control" name="nama_univ" value="{{ data.get('nama_univ','') }}" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Alamat *</label>
+      <textarea class="form-control" name="alamat_univ" rows="2" required>{{ data.get('alamat_univ','') }}</textarea>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg"></i> Simpan</button>
+      <a href="{{ url_for('universitas_list') }}" class="btn btn-ghost">Batal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

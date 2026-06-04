@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if action=='edit' else 'Tambah' }} Peserta{% endblock %}
+{% block topbar_title %}{{ 'Edit' if action=='edit' else 'Tambah' }} Peserta{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{{ 'Edit' if action=='edit' else 'Tambah' }} Peserta</h2>
+  <a href="{{ url_for('peserta_list') }}" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left"></i> Kembali</a>
+</div>
+
+<div class="card form-card">
+  <form method="post">
+    <div class="form-group">
+      <label class="form-label">NISN *</label>
+      <input class="form-control mono" name="nisn" value="{{ data.get('nisn','') }}" required placeholder="Contoh: 7204653755" {% if action=='edit' %}readonly{% endif %}>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nama Peserta *</label>
+      <input class="form-control" name="nama_peserta" value="{{ data.get('nama_peserta','') }}" required placeholder="Nama lengkap peserta">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="form-group">
+        <label class="form-label">Tanggal Lahir *</label>
+        <input class="form-control" name="tgl_lahir" type="date" value="{{ data.get('tgl_lahir','') }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Angkatan *</label>
+        <select class="form-control" name="angkatan" required>
+          {% for yr in [2024,2025,2026] %}
+          <option value="{{ yr }}" {% if data.get('angkatan')|string == yr|string %}selected{% endif %}>{{ yr }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Asal Sekolah *</label>
+      <input class="form-control" name="asal_sekolah" value="{{ data.get('asal_sekolah','') }}" required placeholder="Nama sekolah asal">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Alamat *</label>
+      <textarea class="form-control" name="alamat_peserta" rows="2" required placeholder="Alamat lengkap">{{ data.get('alamat_peserta','') }}</textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg"></i> Simpan</button>
+      <a href="{{ url_for('peserta_list') }}" class="btn btn-ghost">Batal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

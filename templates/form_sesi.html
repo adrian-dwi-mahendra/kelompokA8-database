@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if action=='edit' else 'Tambah' }} Sesi{% endblock %}
+{% block topbar_title %}{{ 'Edit' if action=='edit' else 'Tambah' }} Sesi{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{{ 'Edit' if action=='edit' else 'Tambah' }} Sesi</h2>
+  <a href="{{ url_for('sesi_list') }}" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left"></i> Kembali</a>
+</div>
+<div class="card form-card">
+  <form method="post">
+    <div class="form-group">
+      <label class="form-label">No. Sesi</label>
+      {% if action == 'edit' %}
+        <div class="auto-id-wrap">
+          <input class="form-control" name="no_sesi" value="{{ data.no_sesi or '' }}" readonly required>
+          <span class="auto-id-badge"><i class="bi bi-lock-fill"></i> Terkunci</span>
+        </div>
+        <small class="form-hint">No. sesi tidak dapat diubah.</small>
+      {% else %}
+        <div class="auto-id-wrap">
+          <input class="form-control" name="no_sesi" value="{{ auto_id }}" readonly required>
+          <span class="auto-id-badge"><i class="bi bi-lock-fill"></i> Auto</span>
+        </div>
+        <small class="form-hint">No. sesi dibuat otomatis oleh sistem.</small>
+      {% endif %}
+    </div>
+    <div class="form-group">
+      <label class="form-label">Waktu *</label>
+      <input class="form-control" name="waktu" value="{{ data.waktu if data else '' }}" placeholder="Contoh: 07:30 – 09:30" required>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg"></i> Simpan</button>
+      <a href="{{ url_for('sesi_list') }}" class="btn btn-ghost">Batal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Lokasi Ujian{% endblock %}
+{% block topbar_title %}Lokasi Ujian{% endblock %}
+{% block content %}
+<div class="page-header"><h2>Lokasi Ujian</h2><p>Ruang dan gedung tempat ujian berlangsung</p></div>
+<div class="toolbar">
+  <form method="get" style="display:contents" id="filterForm">
+    <div class="search-wrap"><i class="bi bi-search"></i>
+      <input class="form-control" name="q" value="{{ search }}" autocomplete="off" placeholder="Cari ID / nama ruang…"
+             onchange="this.form.submit()">
+    </div>
+    <select class="form-control" name="id_univ" style="width:220px" onchange="this.form.submit()">
+      <option value="">Semua Universitas</option>
+      {% for u in univs %}
+      <option value="{{ u.id_univ }}" {% if id_univ==u.id_univ %}selected{% endif %}>{{ u.nama_univ }}</option>
+      {% endfor %}
+    </select>
+    {% if search or id_univ %}
+    <a href="{{ url_for('lokasi_list') }}" class="btn btn-ghost"><i class="bi bi-x"></i> Reset</a>
+    {% endif %}
+  </form>
+  <div class="toolbar-right"><a href="{{ url_for('lokasi_tambah') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tambah Lokasi</a></div>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>ID Lokasi</th><th>Nama Ruang</th><th>Gedung</th><th>ID Univ (FK)</th><th>Universitas</th><th>Aksi</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td class="mono" style="color:var(--gold);font-size:12px">{{ r.id_lokasi }}</td>
+        <td style="font-weight:600;color:#fff">{{ r.nama_ruang }}</td>
+        <td style="font-size:13px">{{ r.gedung }}</td>
+        <td class="mono" style="color:var(--cyan);font-size:12px">{{ r.id_univ }}</td>
+        <td style="font-size:12px;color:var(--text-muted)">{{ r.nama_univ }}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <a href="{{ url_for('lokasi_edit', id_lokasi=r.id_lokasi) }}" class="btn btn-ghost btn-sm btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+            <form method="post" action="{{ url_for('lokasi_hapus', id_lokasi=r.id_lokasi) }}" onsubmit="return confirm('Hapus lokasi ini?')">
+              <button class="btn btn-danger btn-sm btn-icon" type="submit" title="Hapus"><i class="bi bi-trash"></i></button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}<tr><td colspan="6"><div class="empty-state"><i class="bi bi-geo-alt"></i><p>Tidak ada data.</p></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border)">
+    <span>Total: <strong>{{ total }}</strong> data · Halaman <strong>{{ page }}/{{ max_page }}</strong></span>
+    <div style="display:flex;gap:4px">
+      {% if page > 1 %}
+        <a href="{{ request.path }}?page=1{{ '&q=' + search if search else '' }}{{ '&status=' + status if status else '' }}{{ '&id_univ=' + id_univ if id_univ else '' }}{{ '&no_sesi=' + no_sesi if no_sesi else '' }}{{ '&skor_min=' + skor_min if skor_min else '' }}{{ '&skor_max=' + skor_max if skor_max else '' }}{{ '&jenjang=' + jenjang if jenjang else '' }}{{ '&pilihan_ke=' + pilihan_ke if pilihan_ke else '' }}{{ '&angkatan=' + angkatan if angkatan else '' }}" class="btn btn-ghost btn-sm" title="Awal"><i class="bi bi-skip-backward-fill"></i></a>
+        <a href="{{ request.path }}?page={{ page-1 }}{{ '&q=' + search if search else '' }}{{ '&status=' + status if status else '' }}{{ '&id_univ=' + id_univ if id_univ else '' }}{{ '&no_sesi=' + no_sesi if no_sesi else '' }}{{ '&skor_min=' + skor_min if skor_min else '' }}{{ '&skor_max=' + skor_max if skor_max else '' }}{{ '&jenjang=' + jenjang if jenjang else '' }}{{ '&pilihan_ke=' + pilihan_ke if pilihan_ke else '' }}{{ '&angkatan=' + angkatan if angkatan else '' }}" class="btn btn-ghost btn-sm"><i class="bi bi-chevron-left"></i></a>
+      {% endif %}
+      {% if page < max_page %}
+        <a href="{{ request.path }}?page={{ page+1 }}{{ '&q=' + search if search else '' }}{{ '&status=' + status if status else '' }}{{ '&id_univ=' + id_univ if id_univ else '' }}{{ '&no_sesi=' + no_sesi if no_sesi else '' }}{{ '&skor_min=' + skor_min if skor_min else '' }}{{ '&skor_max=' + skor_max if skor_max else '' }}{{ '&jenjang=' + jenjang if jenjang else '' }}{{ '&pilihan_ke=' + pilihan_ke if pilihan_ke else '' }}{{ '&angkatan=' + angkatan if angkatan else '' }}" class="btn btn-ghost btn-sm"><i class="bi bi-chevron-right"></i></a>
+        <a href="{{ request.path }}?page={{ max_page }}{{ '&q=' + search if search else '' }}{{ '&status=' + status if status else '' }}{{ '&id_univ=' + id_univ if id_univ else '' }}{{ '&no_sesi=' + no_sesi if no_sesi else '' }}{{ '&skor_min=' + skor_min if skor_min else '' }}{{ '&skor_max=' + skor_max if skor_max else '' }}{{ '&jenjang=' + jenjang if jenjang else '' }}{{ '&pilihan_ke=' + pilihan_ke if pilihan_ke else '' }}{{ '&angkatan=' + angkatan if angkatan else '' }}" class="btn btn-ghost btn-sm" title="Akhir"><i class="bi bi-skip-forward-fill"></i></a>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

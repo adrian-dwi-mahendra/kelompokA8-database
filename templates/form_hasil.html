@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}{% if action=='edit' %}Edit Hasil Ujian{% else %}Tambah Hasil Ujian{% endif %}{% endblock %}
+{% block topbar_title %}{% if action=='edit' %}Edit Hasil Ujian{% else %}Tambah Hasil Ujian{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{% if action=='edit' %}Edit Hasil Ujian{% else %}Tambah Hasil Ujian{% endif %}</h2>
+  <a href="{{ url_for('hasil_list') }}" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left"></i> Kembali</a>
+</div>
+
+<div class="card form-card">
+  <form method="post" id="formHasil">
+
+    <!-- ID Hasil (auto) -->
+    <div class="form-group">
+      <label class="form-label">ID Hasil</label>
+      <div class="auto-id-wrap">
+        <input class="form-control mono" name="id_hasil" value="{{ auto_id }}" readonly required>
+        <span class="auto-id-badge"><i class="bi bi-lock-fill"></i> Auto</span>
+      </div>
+    </div>
+
+    <!-- No. Pendaftaran -->
+    <div class="form-group">
+      <label class="form-label">No. Pendaftaran *</label>
+      {% if action == 'edit' %}
+      <select class="form-control" name="no_pendaftaran" required>
+        {% for p in pend_rows %}
+        <option value="{{ p.no_pendaftaran }}" {% if data.get('no_pendaftaran')==p.no_pendaftaran %}selected{% endif %}>
+          {{ p.no_pendaftaran }} — {{ p.nama_peserta }}
+        </option>
+        {% endfor %}
+      </select>
+      {% else %}
+      <div class="typeahead-wrap">
+        <i class="bi bi-search ta-icon"></i>
+        <input class="form-control ta-input" id="ta-pend-input" type="text"
+               placeholder="Ketik No. Pendaftaran…" autocomplete="off">
+        <input type="hidden" name="no_pendaftaran" id="pend-val">
+        <div class="ta-dropdown" id="ta-pend-list"></div>
+      </div>
+      <div class="ta-confirm" id="pend-confirm"></div>
+      <small class="form-hint">Hanya pendaftaran yang belum memiliki hasil ujian ditampilkan.</small>
+      {% endif %}
+    </div>
+
+    <!-- Skor + Status -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="form-group">
+        <label class="form-label">Skor Rerata *</label>
+        <input class="form-control mono" name="skor_rerata" type="number"
+               step="0.01" min="0" max="1000" required placeholder="200.00 – 1000.00"
+               value="{{ data.get('skor_rerata','') }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status *</label>
+        <select class="form-control" name="status" id="status-sel" required onchange="toggleProdi()">
+          <option value="Lulus" {% if data.get('status')=='Lulus' %}selected{% endif %}>Lulus</option>
+          <option value="Tidak Lulus" {% if data.get('status')=='Tidak Lulus' %}selected{% endif %}>Tidak Lulus</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ID Prodi -->
+    <div class="form-group" id="prodi-section">
+      <label class="form-label">ID Prodi
+      </label>
+      {% if action == 'edit' %}
+      <select class="form-control" name="id_prodi" id="prodi-sel">
+        <option value="">— Tidak ada (Tidak Lulus) —</option>
+        {% for p in prodi_rows %}
+        <option value="{{ p.id_prodi }}" {% if data.get('id_prodi')==p.id_prodi %}selected{% endif %}>
+          {{ p.id_prodi }} — {{ p.nama_prodi }} ({{ p.jenjang }}) · {{ p.nama_univ }}
+        </option>
+        {% endfor %}
+      </select>
+      {% else %}
+      <!-- Placeholder saat pendaftaran belum dipilih -->
+      <div id="prodi-placeholder" style="
+        background:var(--navy-3);border:1px dashed rgba(255,255,255,.12);
+        border-radius:8px;padding:14px 16px;
+        display:flex;align-items:center;gap:8px;color:var(--text-muted);font-size:13px">
+        <i class="bi bi-arrow-up-circle" style="font-size:16px"></i>
+        Pilih No. Pendaftaran terlebih dahulu
+      </div>
+
+      <!-- Daftar prodi muncul setelah pendaftaran dipilih -->
+      <div id="prodi-list-wrap" style="display:none">
+        <div id="prodi-cards" style="display:flex;flex-direction:column;gap:8px"></div>
+        <input type="hidden" name="id_prodi" id="prodi-val">
+        <div id="prodi-confirm" class="ta-confirm" style="margin-top:6px"></div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg"></i> Simpan</button>
+      <a href="{{ url_for('hasil_list') }}" class="btn btn-ghost">Batal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if action == 'edit' %}
+<script>
+function toggleProdi() {
+  const lulus = document.getElementById('status-sel').value === 'Lulus';
+  document.getElementById('prodi-section').style.display = lulus ? '' : 'none';
+  if (!lulus) {
+    const prodiSel = document.getElementById('prodi-sel');
+    if (prodiSel) prodiSel.value = '';
+  }
+}
+toggleProdi();
+</script>
+{% else %}
+<script>
+makeTypeahead({
+  inputId:    'ta-pend-input',
+  dropdownId: 'ta-pend-list',
+  hiddenId:   'pend-val',
+  confirmId:  'pend-confirm',
+  apiUrl:     '/api/search/pendaftaran?tanpa_hasil=1',
+  required:   true,
+  labelFn:    p => p.no_pendaftaran,
+  sublabelFn: p => `${p.nama_peserta} · ${p.nisn}`,
+  valueFn:    p => p.no_pendaftaran,
+});
+
+// After pendaftaran is selected via typeahead, load prodi options
+const origSelectItem = window._origSelect;
+const pendInput = document.getElementById('ta-pend-input');
+const pendVal   = document.getElementById('pend-val');
+
+// Watch pend-val for changes via MutationObserver or input event
+// Simpler: patch the ta-item selection in makeTypeahead by polling
+let _lastPendVal = '';
+setInterval(() => {
+  const v = pendVal.value;
+  if (v && v !== _lastPendVal) {
+    _lastPendVal = v;
+    loadProdiByPendaftaran(v);
+  }
+  if (!v && _lastPendVal) {
+    _lastPendVal = '';
+    resetProdiList();
+  }
+}, 150);
+
+async function loadProdiByPendaftaran(noPend) {
+  const listWrap = document.getElementById('prodi-list-wrap');
+  const placeholder = document.getElementById('prodi-placeholder');
+  const cards = document.getElementById('prodi-cards');
+  const prodiVal = document.getElementById('prodi-val');
+
+  try {
+    const res = await fetch(`/api/prodi-by-pendaftaran/${encodeURIComponent(noPend)}`);
+    const items = await res.json();
+
+    prodiVal.value = '';
+    document.getElementById('prodi-confirm').innerHTML = '';
+    cards.innerHTML = '';
+
+    if (items.length === 0) {
+      cards.innerHTML = `<div style="padding:12px 14px;background:var(--navy-3);border:1px solid var(--border);
+        border-radius:8px;font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:8px">
+        <i class="bi bi-info-circle"></i> Tidak ada pilihan prodi untuk pendaftaran ini.
+      </div>`;
+    } else {
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'prodi-option-card';
+        card.dataset.idProdi = item.id_prodi;
+        card.innerHTML = `
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:28px;height:28px;border-radius:6px;background:rgba(245,200,66,.12);
+              display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <span style="font-size:11px;font-weight:700;color:var(--gold)">${item.pilihan_ke}</span>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--cyan)">${item.id_prodi}</div>
+              <div style="font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.nama_prodi}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:1px">
+                <i class="bi bi-bank" style="margin-right:3px"></i>${item.nama_univ}
+                <span style="margin-left:8px;background:rgba(56,189,248,.1);color:var(--cyan);border:1px solid rgba(56,189,248,.2);padding:1px 6px;border-radius:10px;font-size:10px">${item.jenjang}</span>
+              </div>
+            </div>
+            <div class="prodi-check" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);
+              display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s">
+            </div>
+          </div>`;
+        card.style.cssText = `padding:12px 14px;background:var(--navy-3);border:1px solid var(--border);
+          border-radius:8px;cursor:pointer;transition:all .15s`;
+        card.addEventListener('mouseenter', () => {
+          if (prodiVal.value !== item.id_prodi) card.style.borderColor = 'rgba(245,200,66,.3)';
+        });
+        card.addEventListener('mouseleave', () => {
+          if (prodiVal.value !== item.id_prodi) card.style.borderColor = 'var(--border)';
+        });
+        card.addEventListener('click', () => selectProdi(item.id_prodi, item.nama_prodi, item.nama_univ));
+        cards.appendChild(card);
+      });
+    }
+
+    placeholder.style.display = 'none';
+    listWrap.style.display = '';
+  } catch(e) {
+    console.warn('Failed to load prodi:', e);
+  }
+}
+
+function selectProdi(idProdi, namaProdi, namaUniv) {
+  const prodiVal = document.getElementById('prodi-val');
+  const confirm = document.getElementById('prodi-confirm');
+
+  // Deselect all
+  document.querySelectorAll('.prodi-option-card').forEach(c => {
+    c.style.background = 'var(--navy-3)';
+    c.style.borderColor = 'var(--border)';
+    c.querySelector('.prodi-check').style.background = 'transparent';
+    c.querySelector('.prodi-check').style.borderColor = 'var(--border)';
+    c.querySelector('.prodi-check').innerHTML = '';
+  });
+
+  if (prodiVal.value === idProdi) {
+    // Toggle off
+    prodiVal.value = '';
+    confirm.innerHTML = '';
+    return;
+  }
+
+  // Select clicked card
+  const selected = document.querySelector(`[data-id-prodi="${idProdi}"]`);
+  if (selected) {
+    selected.style.background = 'rgba(245,200,66,.08)';
+    selected.style.borderColor = 'rgba(245,200,66,.5)';
+    const check = selected.querySelector('.prodi-check');
+    check.style.background = 'var(--gold)';
+    check.style.borderColor = 'var(--gold)';
+    check.innerHTML = '<i class="bi bi-check" style="font-size:12px;color:var(--navy);font-weight:900"></i>';
+  }
+
+  prodiVal.value = idProdi;
+  confirm.innerHTML = `<span class="ta-tag ta-ok"><i class="bi bi-check-circle"></i> ${idProdi} — ${namaProdi} · ${namaUniv}</span>`;
+}
+
+function resetProdiList() {
+  document.getElementById('prodi-placeholder').style.display = '';
+  document.getElementById('prodi-list-wrap').style.display = 'none';
+  document.getElementById('prodi-val').value = '';
+  document.getElementById('prodi-confirm').innerHTML = '';
+}
+
+function toggleProdi() {
+  const lulus = document.getElementById('status-sel').value === 'Lulus';
+  document.getElementById('prodi-section').style.display = lulus ? '' : 'none';
+  if (!lulus) {
+    document.getElementById('prodi-val').value = '';
+  }
+}
+
+document.getElementById('formHasil').addEventListener('submit', function(e) {
+  if (!document.getElementById('pend-val').value) {
+    e.preventDefault();
+    document.getElementById('pend-confirm').innerHTML =
+      '<span class="ta-tag ta-err"><i class="bi bi-x-circle"></i> Wajib dipilih dari daftar</span>';
+  }
+});
+
+toggleProdi();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,593 @@
+{% extends "base.html" %}
+{% block title %}Analisis & Query SQL{% endblock %}
+{% block topbar_title %}Analisis & Query SQL{% endblock %}
+
+{% block head %}
+<style>
+  .query-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .query-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 14px;
+    background: rgba(30,45,74,0.5);
+  }
+  .query-num {
+    background: var(--gold);
+    color: var(--navy);
+    font-size: 12px; font-weight: 700;
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .query-header h3 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+  .query-header p  { font-size: 12px; color: var(--text-muted); }
+  .query-clause {
+    font-size: 11px; font-family: 'DM Mono', monospace;
+    color: var(--cyan);
+    background: rgba(56,189,248,.1);
+    padding: 2px 8px; border-radius: 4px;
+    border: 1px solid rgba(56,189,248,.2);
+    display: inline-block; margin-top: 4px;
+  }
+  .query-body  { padding: 16px 20px; }
+  .chart-wrap  { padding: 16px 20px; border-top: 1px solid var(--border); }
+  .chart-wrap canvas { max-height: 240px; }
+
+  /* Q5 Search Box */
+  .search-nisn {
+    display: flex; gap: 10px; align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(15,23,42,0.4);
+    flex-wrap: wrap;
+  }
+  .search-nisn input { max-width: 260px; font-family: 'DM Mono', monospace; }
+
+  /* Q7 summary cards */
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .summary-card {
+    background: var(--navy-3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    text-align: center;
+  }
+  .summary-card .val { font-size: 32px; font-weight: 700; font-family: 'DM Mono', monospace; }
+  .summary-card .lbl { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Rasio bar */
+  .rasio-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .rasio-bar { height: 6px; border-radius: 3px; background: var(--gold); flex-shrink: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2><i class="bi bi-bar-chart-line" style="color:var(--gold)"></i> &nbsp;Analisis & Query SQL</h2>
+  <p>12 Query analisis data SNBT — Kelompok A-8</p>
+</div>
+
+<!-- ─── Q1: Top 10 Peserta Nilai Tertinggi ─── -->
+<div class="query-section" id="q1">
+  <div class="query-header">
+    <div class="query-num">1</div>
+    <div>
+      <h3>Top 10 Peserta Nilai Tertinggi</h3>
+      <p>Peserta dengan skor rerata tertinggi yang berstatus Lulus</p>
+    </div>
+  </div>
+  <div class="query-body">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Rank</th><th>NISN</th><th>Nama Peserta</th><th>Asal Sekolah</th><th>Jurusan Diterima</th><th>Universitas</th><th>Skor</th></tr></thead>
+        <tbody>
+          {% for r in q1 %}
+          <tr>
+            <td style="font-weight:700;font-size:16px">
+              {% if loop.index==1 %}🥇{% elif loop.index==2 %}🥈{% elif loop.index==3 %}🥉{% else %}<span class="mono" style="color:var(--text-muted)">{{ loop.index }}</span>{% endif %}
+            </td>
+            <td class="mono" style="color:var(--cyan);font-size:12px">{{ r.nisn }}</td>
+            <td style="font-weight:600;color:#fff">{{ r.nama_peserta }}</td>
+            <td style="font-size:12px">{{ r.asal_sekolah }}</td>
+            <td><span class="badge badge-info">{{ r.jurusan or '—' }}</span></td>
+            <td style="font-size:12px;color:var(--text-muted)">{{ r.nama_univ or '—' }}</td>
+            <td><span class="mono" style="font-weight:700;color:var(--gold);font-size:15px">{{ "%.1f"|format(r.skor_rerata) }}</span></td>
+          </tr>
+          {% else %}<tr><td colspan="7"><div class="empty-state" style="padding:20px"><i class="bi bi-inbox"></i><p>Tidak ada data.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Q2: Jumlah Lulus per Angkatan ─── -->
+<div class="query-section" id="q2">
+  <div class="query-header">
+    <div class="query-num">2</div>
+    <div>
+      <h3>Jumlah Lulus per Angkatan</h3>
+      <p>Perbandingan jumlah peserta yang lulus di setiap angkatan</p>
+    </div>
+  </div>
+  <div class="query-body">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Angkatan</th><th>Jumlah Lulus</th><th>Visualisasi</th></tr></thead>
+        <tbody>
+          {% set max_lulus = q2|map(attribute='jumlah_lulus')|max %}
+          {% for r in q2 %}
+          <tr>
+            <td><span class="badge badge-gold mono" style="font-size:13px">{{ r.angkatan }}</span></td>
+            <td><span class="mono" style="font-size:18px;font-weight:700;color:var(--green)">{{ r.jumlah_lulus }}</span></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:{{ (r.jumlah_lulus / max_lulus * 180)|int }}px;height:8px;background:var(--green);border-radius:4px;opacity:0.8"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Q3: Universitas Pendaftar Terbanyak ─── -->
+<div class="query-section" id="q3">
+  <div class="query-header">
+    <div class="query-num">3</div>
+    <div>
+      <h3>Universitas dengan Pendaftar Terbanyak</h3>
+      <p>10 universitas yang paling banyak diminati peserta (berdasarkan pilihan prodi)</p>
+    </div>
+  </div>
+  <div class="query-body">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Rank</th><th>Universitas</th><th>Jumlah Pendaftar</th></tr></thead>
+        <tbody>
+          {% for r in q3 %}
+          <tr>
+            <td class="mono" style="color:var(--text-muted)">{{ loop.index }}</td>
+            <td style="font-weight:600;color:#fff">{{ r.nama_univ }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="mono" style="color:var(--gold);font-size:16px;font-weight:700">{{ r.jumlah_pendaftar }}</span>
+                <div style="height:6px;border-radius:3px;background:var(--gold);opacity:0.7;width:{{ (r.jumlah_pendaftar / (q3[0].jumlah_pendaftar if q3 else 1) * 120)|int }}px"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Q4: Rata-rata Skor per Universitas ─── -->
+<div class="query-section" id="q4">
+  <div class="query-header">
+    <div class="query-num">4</div>
+    <div>
+      <h3>Rata-rata Skor per Universitas</h3>
+      <p>Rata-rata skor rerata peserta lulus di setiap universitas (Top 10)</p>
+    </div>
+  </div>
+  <div class="query-body">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Rank</th><th>Universitas</th><th>Rata-rata Skor</th></tr></thead>
+        <tbody>
+          {% for r in q4 %}
+          <tr>
+            <td class="mono" style="color:var(--text-muted)">{{ loop.index }}</td>
+            <td style="font-weight:600;color:#fff">{{ r.nama_univ }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="mono" style="font-size:16px;font-weight:700;color:{% if r.rata_skor >= 750 %}var(--green){% elif r.rata_skor >= 700 %}var(--gold){% else %}var(--cyan){% endif %}">{{ r.rata_skor }}</span>
+                <div style="height:6px;border-radius:3px;background:var(--cyan);opacity:0.6;width:{{ ((r.rata_skor - 600) / 300 * 120)|int }}px"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Q5: Pencarian Peserta berdasarkan NISN ─── -->
+<div class="query-section" id="q5">
+  <div class="query-header">
+    <div class="query-num">5</div>
+    <div>
+      <h3>Pencarian Peserta berdasarkan NISN</h3>
+      <p>Detail lengkap peserta: data diri, pendaftaran, sesi, lokasi ujian, pilihan prodi, dan hasil</p>
+    </div>
+  </div>
+  <div class="search-nisn">
+    <form method="get" action="#q5" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <input class="form-control" name="nisn_cari" value="{{ nisn_cari }}"
+             placeholder="Masukkan NISN… contoh: 9337563620" style="max-width:280px;font-family:'DM Mono',monospace">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Cari</button>
+      {% if nisn_cari %}<a href="/analisis#q5" class="btn btn-ghost"><i class="bi bi-x"></i> Reset</a>{% endif %}
+    </form>
+  </div>
+  <div class="query-body">
+    {% if nisn_cari %}
+      {% if q5 %}
+        {% set r = q5[0] %}
+
+        <!-- IDENTITAS PESERTA -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:10px">
+          <i class="bi bi-person-circle"></i> &nbsp;Identitas Peserta
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:20px">
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">NISN</div>
+            <div class="mono" style="font-size:15px;color:var(--cyan);font-weight:600;margin-top:4px">{{ r.nisn }}</div>
+          </div>
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px;grid-column:span 2">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Nama Lengkap</div>
+            <div style="font-size:16px;color:#fff;font-weight:700;margin-top:4px">{{ r.nama_peserta }}</div>
+          </div>
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Tgl. Lahir</div>
+            <div class="mono" style="font-size:13px;color:var(--text);margin-top:4px">{{ r.tgl_lahir }}</div>
+          </div>
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Angkatan</div>
+            <div style="margin-top:5px"><span class="badge badge-gold">{{ r.angkatan }}</span></div>
+          </div>
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Asal Sekolah</div>
+            <div style="font-size:12px;color:var(--text);margin-top:4px">{{ r.asal_sekolah }}</div>
+          </div>
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px;grid-column:span 2">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Alamat</div>
+            <div style="font-size:12px;color:var(--text);margin-top:4px">{{ r.alamat_peserta }}</div>
+          </div>
+        </div>
+
+        <!-- INFORMASI PENDAFTARAN -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px">
+          <i class="bi bi-clipboard-check"></i> &nbsp;Informasi Pendaftaran & Ujian
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:20px">
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px;grid-column:span 2">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">No. Pendaftaran</div>
+            <div class="mono" style="font-size:14px;color:var(--cyan);font-weight:600;margin-top:4px">{{ r.no_pendaftaran }}</div>
+          </div>
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Tgl. Pendaftaran</div>
+            <div class="mono" style="font-size:13px;color:var(--text);margin-top:4px">{{ r.tgl_pendaftaran }}</div>
+          </div>
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Tgl. Ujian</div>
+            <div class="mono" style="font-size:13px;color:var(--text);margin-top:4px">{{ r.tgl_ujian }}</div>
+          </div>
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Sesi</div>
+            <div style="margin-top:5px">
+              <span class="badge badge-gray">{{ r.no_sesi }}</span>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:3px">{{ r.waktu_sesi }}</div>
+            </div>
+          </div>
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Ruang Ujian</div>
+            <div style="font-size:12px;color:var(--text);margin-top:4px">{{ r.nama_ruang }}, {{ r.gedung }}</div>
+          </div>
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px;grid-column:span 2">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Universitas Lokasi Ujian</div>
+            <div style="font-size:13px;color:var(--text);font-weight:600;margin-top:4px">{{ r.univ_lokasi }}</div>
+          </div>
+        </div>
+
+        <!-- PILIHAN PRODI -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px">
+          <i class="bi bi-mortarboard"></i> &nbsp;Pilihan Program Studi
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="background:var(--gold);color:var(--navy);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">PILIHAN 1</span>
+            </div>
+            {% if r.pilihan1_prodi %}
+            <div style="font-size:14px;color:#fff;font-weight:600">{{ r.pilihan1_prodi }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px">{{ r.pilihan1_jenjang }} · {{ r.pilihan1_univ }}</div>
+            {% else %}
+            <div style="color:var(--text-muted);font-size:13px">—</div>
+            {% endif %}
+          </div>
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="background:var(--navy-4);color:var(--text-muted);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid var(--border)">PILIHAN 2</span>
+            </div>
+            {% if r.pilihan2_prodi %}
+            <div style="font-size:14px;color:#fff;font-weight:600">{{ r.pilihan2_prodi }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px">{{ r.pilihan2_jenjang }} · {{ r.pilihan2_univ }}</div>
+            {% else %}
+            <div style="color:var(--text-muted);font-size:13px">—</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- HASIL UJIAN -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:{% if r.status=='Lulus' %}var(--green){% else %}var(--red){% endif %};margin-bottom:10px">
+          <i class="bi bi-trophy"></i> &nbsp;Hasil Ujian
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px">
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Skor Rerata</div>
+            <div class="mono" style="font-size:30px;font-weight:700;color:{% if r.skor_rerata >= 700 %}var(--green){% elif r.skor_rerata >= 600 %}var(--gold){% else %}var(--red){% endif %};margin-top:6px">{{ "%.1f"|format(r.skor_rerata) }}</div>
+          </div>
+          <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Status</div>
+            <div style="margin-top:10px">
+              <span class="badge {% if r.status=='Lulus' %}badge-success{% else %}badge-danger{% endif %}" style="font-size:14px;padding:6px 14px">
+                {% if r.status=='Lulus' %}✓{% else %}✗{% endif %} {{ r.status }}
+              </span>
+            </div>
+          </div>
+          {% if r.prodi_diterima %}
+          <div style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.2);border-radius:10px;padding:14px;grid-column:span 2">
+            <div style="font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Program Studi Diterima</div>
+            <div style="font-size:15px;color:#fff;font-weight:700">{{ r.prodi_diterima }} <span style="font-size:12px;color:var(--text-muted);font-weight:400">({{ r.jenjang_diterima }})</span></div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px"><i class="bi bi-bank" style="margin-right:4px"></i>{{ r.univ_diterima }}</div>
+          </div>
+          {% endif %}
+        </div>
+
+      {% else %}
+        <div class="empty-state" style="padding:30px">
+          <i class="bi bi-person-x"></i>
+          <p>NISN <strong class="mono" style="color:var(--gold)">{{ nisn_cari }}</strong> tidak ditemukan.</p>
+        </div>
+      {% endif %}
+    {% else %}
+      <p style="color:var(--text-muted);font-size:13px">Masukkan NISN peserta di kolom pencarian di atas untuk melihat data lengkap.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ─── Q6: Sesi Ujian Paling Banyak ─── -->
+<div class="query-section" id="q6">
+  <div class="query-header">
+    <div class="query-num">6</div>
+    <div>
+      <h3>Sesi Ujian Paling Banyak Peserta</h3>
+      <p>Distribusi jumlah peserta berdasarkan sesi ujian</p>
+    </div>
+  </div>
+  <div class="query-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      {% set total_sesi = q6|sum(attribute='jumlah_peserta') %}
+      {% for r in q6 %}
+      <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:20px">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Sesi {{ r.no_sesi }}</div>
+        <div style="font-size:14px;color:#fff;font-weight:600;margin-bottom:12px">{{ r.waktu }}</div>
+        <div class="mono" style="font-size:30px;font-weight:700;color:var(--gold)">{{ r.jumlah_peserta }}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px">peserta</div>
+        <div style="margin-top:12px;height:6px;background:var(--navy-4);border-radius:3px;overflow:hidden">
+          <div style="width:{{ (r.jumlah_peserta / total_sesi * 100)|int }}%;height:100%;background:var(--gold);border-radius:3px"></div>
+        </div>
+        <div style="font-size:12px;color:var(--gold);margin-top:4px">{{ (r.jumlah_peserta / total_sesi * 100)|round(1) }}%</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ─── Q7: Total Peserta Lulus Tidak Lulus ─── -->
+<div class="query-section" id="q7">
+  <div class="query-header">
+    <div class="query-num">7</div>
+    <div>
+      <h3>Total Peserta, Lulus, Tidak Lulus</h3>
+      <p>Ringkasan keseluruhan hasil ujian seluruh peserta</p>
+    </div>
+  </div>
+  <div class="query-body">
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="val" style="color:var(--cyan)">{{ "{:,}".format(q7.total_peserta) }}</div>
+        <div class="lbl">Total Peserta</div>
+      </div>
+      <div class="summary-card">
+        <div class="val" style="color:var(--green)">{{ "{:,}".format(q7.total_lulus) }}</div>
+        <div class="lbl">Total Lulus</div>
+        <div style="font-size:13px;color:var(--green);margin-top:4px">{{ (q7.total_lulus / q7.total_peserta * 100)|round(1) }}%</div>
+      </div>
+      <div class="summary-card">
+        <div class="val" style="color:var(--red)">{{ "{:,}".format(q7.total_tidak_lulus) }}</div>
+        <div class="lbl">Total Tidak Lulus</div>
+        <div style="font-size:13px;color:var(--red);margin-top:4px">{{ (q7.total_tidak_lulus / q7.total_peserta * 100)|round(1) }}%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Q8: Asal Sekolah Lulus Terbanyak ─── -->
+<div class="query-section" id="q8">
+  <div class="query-header">
+    <div class="query-num">8</div>
+    <div>
+      <h3>Asal Sekolah dengan Lulusan Terbanyak</h3>
+      <p>10 sekolah dengan kontribusi lulusan SNBT terbanyak</p>
+    </div>
+  </div>
+  <div class="query-body">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Rank</th><th>Asal Sekolah</th><th>Jumlah Lulus</th></tr></thead>
+        <tbody>
+          {% for r in q8 %}
+          <tr>
+            <td class="mono" style="color:var(--text-muted)">{{ loop.index }}</td>
+            <td style="font-weight:600;color:#fff">{{ r.asal_sekolah }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="mono" style="color:var(--green);font-weight:700;font-size:16px">{{ r.jumlah_lulus }}</span>
+                <div style="height:6px;border-radius:3px;background:var(--green);opacity:0.7;width:{{ (r.jumlah_lulus / (q8[0].jumlah_lulus if q8 else 1) * 120)|int }}px"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Q9: Keketatan Jurusan ─── -->
+<div class="query-section" id="q9">
+  <div class="query-header">
+    <div class="query-num">9</div>
+    <div>
+      <h3>Perbandingan Keketatan Jurusan</h3>
+      <p>Rasio peminat terhadap kuota di setiap jurusan (pilihan pertama, Top 10)</p>
+    </div>
+  </div>
+  <div class="query-body">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Program Studi</th><th>Jenjang</th><th>Universitas</th><th>Kuota</th><th>Peminat</th><th>Rasio Keketatan</th></tr></thead>
+        <tbody>
+          {% for r in q9 %}
+          <tr>
+            <td class="mono" style="color:var(--text-muted)">{{ loop.index }}</td>
+            <td style="font-weight:600;color:#fff">{{ r.nama_prodi }}</td>
+            <td><span class="badge badge-info">{{ r.jenjang }}</span></td>
+            <td style="font-size:12px;color:var(--text-muted)">{{ r.nama_univ }}</td>
+            <td class="mono">{{ r.kuota }}</td>
+            <td class="mono" style="color:var(--cyan)">{{ r.jumlah_peminat }}</td>
+            <td>
+              <div class="rasio-bar-wrap">
+                <span class="mono" style="font-weight:700;font-size:15px;color:{% if r.rasio_ketatan >= 2 %}var(--red){% elif r.rasio_ketatan >= 1.5 %}var(--gold){% else %}var(--green){% endif %}">
+                  {{ r.rasio_ketatan }}x
+                </span>
+                <div class="rasio-bar" style="width:{{ [r.rasio_ketatan * 30, 120]|min|int }}px"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Q10: Persentase Lulus Pilihan 1 atau 2 ─── -->
+<div class="query-section" id="q10">
+  <div class="query-header">
+    <div class="query-num">10</div>
+    <div>
+      <h3>Persentase Lulus di Pilihan 1 atau 2</h3>
+      <p>Berapa persen peserta lulus melalui pilihan pertama vs pilihan kedua</p>
+    </div>
+  </div>
+  <div class="query-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">
+      {% for r in q10 %}
+      <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:10px;padding:20px">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">{{ r.keterangan }}</div>
+        <div class="mono" style="font-size:34px;font-weight:700;color:{% if loop.index==1 %}var(--gold){% else %}var(--cyan){% endif %}">
+          {{ r.persentase }}%
+        </div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px">{{ r.jumlah_lulus }} peserta lulus</div>
+        <div style="margin-top:12px;height:6px;background:var(--navy-4);border-radius:3px;overflow:hidden">
+          <div style="width:{{ r.persentase }}%;height:100%;background:{% if loop.index==1 %}var(--gold){% else %}var(--cyan){% endif %};border-radius:3px"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ─── Q11: Perbandingan Lulus per Angkatan ─── -->
+<div class="query-section" id="q11">
+  <div class="query-header">
+    <div class="query-num">11</div>
+    <div>
+      <h3>Perbandingan Lulus / Tidak Lulus per Angkatan</h3>
+      <p>Breakdown hasil ujian berdasarkan tahun angkatan peserta</p>
+    </div>
+  </div>
+  <div class="query-body">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Angkatan</th><th>Total Peserta</th><th>Lulus</th><th>Tidak Lulus</th><th>% Lulus</th></tr></thead>
+        <tbody>
+          {% for r in q11 %}
+          <tr>
+            <td><span class="badge badge-gold mono" style="font-size:13px">{{ r.angkatan }}</span></td>
+            <td class="mono" style="font-weight:600;color:#fff">{{ r.total_peserta }}</td>
+            <td class="mono" style="color:var(--green);font-weight:700">{{ r.lulus }}</td>
+            <td class="mono" style="color:var(--red)">{{ r.tidak_lulus }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:80px;height:6px;background:var(--navy-3);border-radius:3px;overflow:hidden">
+                  <div style="width:{{ r.persen_lulus }}%;height:100%;background:var(--green);border-radius:3px"></div>
+                </div>
+                <span class="mono" style="font-size:13px;font-weight:600;color:var(--green)">{{ r.persen_lulus }}%</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Q12: Pengawas Ruang Paling Banyak Peserta ─── -->
+<div class="query-section" id="q12">
+  <div class="query-header">
+    <div class="query-num">12</div>
+    <div>
+      <h3>Pengawas dengan Ruang Ujian Paling Banyak Peserta</h3>
+      <p>Top 10 pengawas berdasarkan jumlah peserta di ruang yang diawasi</p>
+    </div>
+  </div>
+  <div class="query-body">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Nama Pengawas</th><th>Ruang</th><th>Gedung</th><th>Universitas</th><th>Jumlah Peserta</th></tr></thead>
+        <tbody>
+          {% for r in q12 %}
+          <tr>
+            <td class="mono" style="color:var(--text-muted)">{{ loop.index }}</td>
+            <td style="font-weight:600;color:#fff">{{ r.nama_pengawas }}</td>
+            <td style="font-size:13px">{{ r.nama_ruang }}</td>
+            <td style="font-size:12px">{{ r.gedung }}</td>
+            <td style="font-size:12px;color:var(--text-muted)">{{ r.nama_univ }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="mono" style="color:var(--cyan);font-weight:700;font-size:16px">{{ r.jumlah_peserta }}</span>
+                <div style="height:6px;border-radius:3px;background:var(--cyan);opacity:0.6;width:{{ (r.jumlah_peserta / (q12[0].jumlah_peserta if q12 else 1) * 80)|int }}px"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}
