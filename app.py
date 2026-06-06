@@ -904,6 +904,16 @@ def pilihan_prodi_tambah():
                         ORDER BY u.nama_univ, ps.nama_prodi""")
     if request.method == "POST":
         f = request.form
+        # ← TAMBAH VALIDATION DI SINI (4 baris)
+        existing = qdb(
+            "SELECT * FROM pilihan_prodi WHERE no_pendaftaran=%s AND pilihan_ke=%s",
+            (f["no_pendaftaran"], int(f["pilihan_ke"])),
+            one=True
+        )
+        if existing:
+            flash(f"❌ Pilihan ke-{f['pilihan_ke']} sudah ada untuk pendaftaran ini!", "danger")
+            return render_template("form_pilihan_prodi.html", action="tambah", data=f,
+                                   pendaftaran_rows=pendaftaran_rows, prodi_rows=prodi_rows)
         try:
             xdb("INSERT INTO pilihan_prodi (no_pendaftaran, id_prodi, pilihan_ke) VALUES (%s,%s,%s)",
                 (f["no_pendaftaran"], f["id_prodi"], int(f["pilihan_ke"])))

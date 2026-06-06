@@ -561,7 +561,7 @@
       <i class="bi bi-speedometer2"></i> Dashboard
     </a>
 
-    <div class="nav-section-label" style="margin-top:8px">Master Data</div>
+    <div class="nav-section-label" style="margin-top:8px">Data Dasar</div>
     <a href="{{ url_for('peserta_list') }}" class="nav-item {% if 'peserta' in request.endpoint %}active{% endif %}">
       <i class="bi bi-people"></i> Peserta
     </a>
@@ -580,9 +580,6 @@
     <a href="{{ url_for('sesi_list') }}" class="nav-item {% if 'sesi' in request.endpoint %}active{% endif %}">
       <i class="bi bi-clock"></i> Sesi
     </a>
-    <a href="{{ url_for('pilihan_prodi_list') }}" class="nav-item {% if request.endpoint and 'pilihan_prodi' in request.endpoint %}active{% endif %}">
-      <i class="bi bi-list-check"></i> Pilihan Program Studi
-    </a>
 
     <div class="nav-section-label" style="margin-top:8px">Transaksi</div>
     <a href="{{ url_for('pendaftaran_list') }}" class="nav-item {% if 'pendaftaran' in request.endpoint %}active{% endif %}">
@@ -590,6 +587,9 @@
     </a>
     <a href="{{ url_for('hasil_list') }}" class="nav-item {% if 'hasil' in request.endpoint %}active{% endif %}">
       <i class="bi bi-trophy"></i> Hasil Ujian
+    </a>
+    <a href="{{ url_for('pilihan_prodi_list') }}" class="nav-item {% if request.endpoint and 'pilihan_prodi' in request.endpoint %}active{% endif %}">
+      <i class="bi bi-list-check"></i> Pilihan Program Studi
     </a>
 
     <div class="nav-section-label" style="margin-top:8px">Analitik</div>
