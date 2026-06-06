@@ -914,6 +914,17 @@ def pilihan_prodi_tambah():
             flash(f"❌ Pilihan ke-{f['pilihan_ke']} sudah ada untuk pendaftaran ini!", "danger")
             return render_template("form_pilihan_prodi.html", action="tambah", data=f,
                                    pendaftaran_rows=pendaftaran_rows, prodi_rows=prodi_rows)
+        # Validation 2: harus isi Pilihan 1 dulu ← TAMBAH INI
+        if int(f["pilihan_ke"]) > 1:
+            existing_pilihan_1 = qdb(
+                "SELECT * FROM pilihan_prodi WHERE no_pendaftaran=%s AND pilihan_ke=1",
+                (f["no_pendaftaran"],),
+                one=True
+            )
+            if not existing_pilihan_1:
+                flash("❌ Harus isi Pilihan 1 dulu sebelum Pilihan 2!", "danger")
+                return render_template("form_pilihan_prodi.html", action="tambah", data=f,
+                                       pendaftaran_rows=pendaftaran_rows, prodi_rows=prodi_rows)
         try:
             xdb("INSERT INTO pilihan_prodi (no_pendaftaran, id_prodi, pilihan_ke) VALUES (%s,%s,%s)",
                 (f["no_pendaftaran"], f["id_prodi"], int(f["pilihan_ke"])))
