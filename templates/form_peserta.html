@@ -11,7 +11,7 @@
   <form method="post">
     <div class="form-group">
       <label class="form-label">NISN *</label>
-      <input class="form-control mono" name="nisn" value="{{ data.get('nisn','') }}" required placeholder="Contoh: 7204653755" {% if action=='edit' %}readonly{% endif %}>
+      <input class="form-control mono" name="nisn" value="{{ data.get('nisn','') }}" required placeholder="Contoh: 7204653755" pattern="[0-9]{10}" maxlength="10" {% if action=='edit' %}readonly{% endif %}>
     </div>
     <div class="form-group">
       <label class="form-label">Nama Peserta *</label>
@@ -33,7 +33,7 @@
     </div>
     <div class="form-group">
       <label class="form-label">Asal Sekolah *</label>
-      <input class="form-control" name="asal_sekolah" value="{{ data.get('asal_sekolah','') }}" required placeholder="Nama sekolah asal">
+      <input class="form-control" name="asal_sekolah" value="{{ data.get('asal_sekolah','') }}" required placeholder="Contoh: SMAN 1 Taliwang">
     </div>
     <div class="form-group">
       <label class="form-label">Alamat *</label>

@@ -132,7 +132,7 @@ def index():
 
     stats = {
         "total_peserta":     qdb("SELECT COUNT(*) AS c FROM peserta", one=True)["c"],
-        "total_pendaftaran": ringkas["total_peserta"],
+        "total_pendaftaran": qdb("SELECT COUNT(*) as c FROM pendaftaran", one=True)["c"],
         "total_lulus":       ringkas["total_lulus"],
         "total_tidak_lulus": ringkas["total_tidak_lulus"],
         "avg_skor":          qdb("SELECT ROUND(AVG(skor_rerata)::NUMERIC,2) AS a FROM hasil_ujian", one=True)["a"] or 0,
@@ -232,6 +232,9 @@ def peserta_tambah():
     # NISN diisi manual (bukan sequence — ini nomor identitas nasional eksternal)
     if request.method == "POST":
         f = request.form
+        if not f["nisn"].isdigit() or len(f["nisn"]) != 10:
+            flash("❌ NISN harus 10 angka!", "danger")
+            return render_template("form_peserta.html", action="tambah", data=f)
         try:
             xdb("""INSERT INTO peserta
                    (nisn, nama_peserta, tgl_lahir, asal_sekolah, angkatan, alamat_peserta)
