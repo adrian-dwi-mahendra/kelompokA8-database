@@ -65,7 +65,7 @@
       <label class="form-label">ID Prodi
       </label>
       {% if action == 'edit' %}
-      <select class="form-control" name="id_prodi" id="prodi-sel" required>
+      <select class="form-control" name="id_prodi" id="prodi-sel">
         <option value="">— Tidak ada (Tidak Lulus) —</option>
         {% for p in prodi_rows %}
         <option value="{{ p.id_prodi }}" {% if data.get('id_prodi')==p.id_prodi %}selected{% endif %}>
@@ -103,11 +103,18 @@
 {% if action == 'edit' %}
 <script>
 function toggleProdi() {
+  const prodiSel = document.getElementById('prodi-sel');
   const lulus = document.getElementById('status-sel').value === 'Lulus';
+  
+  // Tampilkan/sembunyikan section
   document.getElementById('prodi-section').style.display = lulus ? '' : 'none';
-  if (!lulus) {
-    const prodiSel = document.getElementById('prodi-sel');
-    if (prodiSel) prodiSel.value = '';
+  
+  // Dynamically set required attribute
+  if (lulus) {
+    prodiSel.setAttribute('required', 'required');
+  } else {
+    prodiSel.removeAttribute('required');
+    prodiSel.value = '';
   }
 }
 toggleProdi();
@@ -251,27 +258,17 @@ function resetProdiList() {
 }
 
 function toggleProdi() {
-  const prodiSel = document.getElementById('prodi-sel');
   const lulus = document.getElementById('status-sel').value === 'Lulus';
-  
-  // Sembunyikan atau munculkan section
   document.getElementById('prodi-section').style.display = lulus ? '' : 'none';
-  
-  if (lulus) {
-    if (prodiSel) prodiSel.required = true; // Wajib diisi jika lulus
-  } else {
-    if (prodiSel) {
-      prodiSel.value = '';
-      prodiSel.required = false; // Matikan required agar form bisa di-submit saat tidak lulus
-    }
+  if (!lulus) {
+    document.getElementById('prodi-val').value = '';
   }
 }
-toggleProdi();
 
 document.getElementById('formHasil').addEventListener('submit', function(e) {
   let isValid = true;
 
-  // 1. Validasi No. Pendaftaran (Bawaan kode kamu)
+  // 1. Validasi No. Pendaftaran
   if (!document.getElementById('pend-val').value) {
     e.preventDefault();
     document.getElementById('pend-confirm').innerHTML =
@@ -279,14 +276,19 @@ document.getElementById('formHasil').addEventListener('submit', function(e) {
     isValid = false;
   }
 
-  // 2. TAMBAHAN: Validasi Pilihan Prodi khusus jika Status == Lulus
+  // 2. Validasi Prodi - wajib diisi HANYA jika Status == Lulus
   const statusSel = document.getElementById('status-sel').value;
   const prodiVal = document.getElementById('prodi-val').value;
 
   if (statusSel === 'Lulus' && !prodiVal) {
-    e.preventDefault(); // Batalkan submit form
+    e.preventDefault();
     document.getElementById('prodi-confirm').innerHTML =
       '<span class="ta-tag ta-err"><i class="bi bi-x-circle"></i> Peserta lulus wajib memilih salah satu program studi!</span>';
     isValid = false;
   }
 });
+
+toggleProdi();
+</script>
+{% endif %}
+{% endblock %}

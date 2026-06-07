@@ -585,11 +585,11 @@
     <a href="{{ url_for('pendaftaran_list') }}" class="nav-item {% if 'pendaftaran' in request.endpoint %}active{% endif %}">
       <i class="bi bi-clipboard-check"></i> Pendaftaran
     </a>
-    <a href="{{ url_for('hasil_list') }}" class="nav-item {% if 'hasil' in request.endpoint %}active{% endif %}">
-      <i class="bi bi-trophy"></i> Hasil Ujian
-    </a>
     <a href="{{ url_for('pilihan_prodi_list') }}" class="nav-item {% if request.endpoint and 'pilihan_prodi' in request.endpoint %}active{% endif %}">
       <i class="bi bi-list-check"></i> Pilihan Program Studi
+    </a>
+    <a href="{{ url_for('hasil_list') }}" class="nav-item {% if 'hasil' in request.endpoint %}active{% endif %}">
+      <i class="bi bi-trophy"></i> Hasil Ujian
     </a>
 
     <div class="nav-section-label" style="margin-top:8px">Analitik</div>
