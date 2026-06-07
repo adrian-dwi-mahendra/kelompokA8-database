@@ -707,7 +707,7 @@ def hasil_list():
         WHERE 1=1"""
     args = []
     if search:
-        base += " AND (p.nama_peserta ILIKE %s OR p.nisn ILIKE %s)"
+        base += " AND (p.nama_peserta ILIKE %s OR hu.id_hasil ILIKE %s)"
         args += [f"%{search}%", f"%{search}%"]
     if status:
         base += " AND hu.status = %s"
@@ -991,7 +991,7 @@ def analisis():
         LEFT JOIN universitas u ON prodi.id_univ = u.id_univ
         WHERE h.status = 'Lulus'
         ORDER BY h.skor_rerata DESC
-        LIMIT 10
+        LIMIT 20
     """)
     q2 = qdb("""
         SELECT p.angkatan, COUNT(*) AS jumlah_lulus

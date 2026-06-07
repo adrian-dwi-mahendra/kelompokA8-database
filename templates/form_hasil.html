@@ -48,7 +48,7 @@
       <div class="form-group">
         <label class="form-label">Skor Rerata *</label>
         <input class="form-control mono" name="skor_rerata" type="number"
-               step="0.01" min="0" max="1000" required placeholder="200.00 – 1000.00"
+               step="0.01" min="200" max="1000" required placeholder="200.00 – 1000.00"
                value="{{ data.get('skor_rerata','') }}">
       </div>
       <div class="form-group">
@@ -65,7 +65,7 @@
       <label class="form-label">ID Prodi
       </label>
       {% if action == 'edit' %}
-      <select class="form-control" name="id_prodi" id="prodi-sel">
+      <select class="form-control" name="id_prodi" id="prodi-sel" required>
         <option value="">— Tidak ada (Tidak Lulus) —</option>
         {% for p in prodi_rows %}
         <option value="{{ p.id_prodi }}" {% if data.get('id_prodi')==p.id_prodi %}selected{% endif %}>

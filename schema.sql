@@ -17,14 +17,14 @@ CREATE TABLE IF NOT EXISTS lokasi (
     nama_ruang VARCHAR(100) NOT NULL,
     gedung     VARCHAR(100) NOT NULL,
     id_univ    VARCHAR(10)  NOT NULL,
-    FOREIGN KEY (id_univ) REFERENCES universitas(id_univ)
+    FOREIGN KEY (id_univ) REFERENCES universitas(id_univ) ON DELETE RESTRICT
 );
 
 CREATE TABLE IF NOT EXISTS pengawas (
     id_pengawas   VARCHAR(10)  PRIMARY KEY NOT NULL,
     nama_pengawas VARCHAR(100) NOT NULL,
     id_lokasi     VARCHAR(10)  NOT NULL,
-    FOREIGN KEY (id_lokasi) REFERENCES lokasi(id_lokasi)
+    FOREIGN KEY (id_lokasi) REFERENCES lokasi(id_lokasi) ON DELETE RESTRICT
 );
 
 -- NISN sebagai VARCHAR (sesuai sqbpro)
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS program_studi (
     jenjang    VARCHAR(10)  NOT NULL,
     kuota      INTEGER      NOT NULL,
     id_univ    VARCHAR(10)  NOT NULL,
-    FOREIGN KEY (id_univ) REFERENCES universitas(id_univ)
+    FOREIGN KEY (id_univ) REFERENCES universitas(id_univ) ON DELETE RESTRICT
 );
 
 CREATE TABLE IF NOT EXISTS pendaftaran (
@@ -59,9 +59,9 @@ CREATE TABLE IF NOT EXISTS pendaftaran (
     no_sesi         VARCHAR(10) NOT NULL,
     tgl_pendaftaran DATE        NOT NULL,
     tgl_ujian       DATE        NOT NULL,
-    FOREIGN KEY (nisn)      REFERENCES peserta(nisn),
-    FOREIGN KEY (id_lokasi) REFERENCES lokasi(id_lokasi),
-    FOREIGN KEY (no_sesi)   REFERENCES sesi(no_sesi)
+    FOREIGN KEY (nisn)      REFERENCES peserta(nisn) ON DELETE RESTRICT,
+    FOREIGN KEY (id_lokasi) REFERENCES lokasi(id_lokasi) ON DELETE RESTRICT,
+    FOREIGN KEY (no_sesi)   REFERENCES sesi(no_sesi) ON DELETE RESTRICT
 );
 
 CREATE TABLE IF NOT EXISTS pilihan_prodi (
@@ -69,8 +69,8 @@ CREATE TABLE IF NOT EXISTS pilihan_prodi (
     id_prodi       VARCHAR(10) NOT NULL,
     pilihan_ke     INTEGER     NOT NULL CHECK (pilihan_ke IN (1, 2)),
     PRIMARY KEY (no_pendaftaran, id_prodi),
-    FOREIGN KEY (no_pendaftaran) REFERENCES pendaftaran(no_pendaftaran),
-    FOREIGN KEY (id_prodi)       REFERENCES program_studi(id_prodi)
+    FOREIGN KEY (no_pendaftaran) REFERENCES pendaftaran(no_pendaftaran) ON DELETE RESTRICT,
+    FOREIGN KEY (id_prodi)       REFERENCES program_studi(id_prodi) ON DELETE RESTRICT
 );
 
 CREATE TABLE IF NOT EXISTS hasil_ujian (
@@ -79,6 +79,6 @@ CREATE TABLE IF NOT EXISTS hasil_ujian (
     skor_rerata    REAL        NOT NULL,
     status         VARCHAR(20) NOT NULL,
     id_prodi       VARCHAR(10),
-    FOREIGN KEY (no_pendaftaran) REFERENCES pendaftaran(no_pendaftaran),
-    FOREIGN KEY (id_prodi)       REFERENCES program_studi(id_prodi)
+    FOREIGN KEY (no_pendaftaran) REFERENCES pendaftaran(no_pendaftaran) ON DELETE RESTRICT,
+    FOREIGN KEY (id_prodi)       REFERENCES program_studi(id_prodi) ON DELETE RESTRICT
 );

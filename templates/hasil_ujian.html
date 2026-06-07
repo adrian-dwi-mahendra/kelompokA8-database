@@ -12,13 +12,16 @@
 <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:18px">
 
   <!-- Row 1: Search + Status + Universitas + Add button -->
-  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-    <div class="search-wrap" style="max-width:280px;flex:1 1 200px">
-      <i class="bi bi-search"></i>
-      <input class="form-control" name="q" value="{{ search }}" autocomplete="off"
-             placeholder="Cari nama / NISN…" onchange="this.form.submit()">
+  <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
+    <!-- SEARCH SECTION - LEBIH RAPI -->
+    <div class="search-wrap" style="flex:1 1 220px;min-width:200px">
+      <div style="position:relative">
+        <i class="bi bi-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer events:none"></i>
+        <input class="form-control" name="q" value="{{ search }}" autocomplete="off"
+               placeholder="Cari nama / ID Hasil…" onchange="this.form.submit()"
+               style="padding-left:40px">
+      </div>
     </div>
-
     <div style="position:relative;min-width:140px">
       <select class="form-control" name="status" onchange="this.form.submit()" style="padding-left:32px;appearance:none;-webkit-appearance:none">
         <option value="">Semua Status</option>
