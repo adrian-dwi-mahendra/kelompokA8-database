@@ -98,7 +98,7 @@
   <div class="query-header">
     <div class="query-num">1</div>
     <div>
-      <h3>Top 20 Peserta Nilai Tertinggi</h3>
+      <h3>Top 10 Peserta Nilai Tertinggi</h3>
       <p>Peserta dengan skor rerata tertinggi yang berstatus Lulus</p>
     </div>
   </div>
@@ -445,13 +445,6 @@
   </div>
   <div class="q8-controls">
     <div>
-      <label>Urutan:</label>
-      <select id="q8-sort" onchange="renderQ8()">
-        <option value="jumlah">Jumlah Lulus (Default)</option>
-        <option value="abjad">Alfabetis (A–Z)</option>
-      </select>
-    </div>
-    <div>
       <label>Tampilkan:</label>
       <select id="q8-limit" onchange="renderQ8()">
         <option value="10">10 baris</option>
@@ -605,26 +598,73 @@
   </div>
 </div>
 
+<!-- ─── Q13: Peserta Lulus per Sesi ─── -->
+<div class="query-section" id="q13">
+  <div class="query-header">
+    <div class="query-num">13</div>
+    <div>
+      <h3>Peserta Lulus berdasarkan Sesi Ujian</h3>
+      <p>No. pendaftaran, skor rerata, dan prodi/universitas diterima — filter per sesi</p>
+    </div>
+  </div>
+  <div class="q8-controls">
+    <div>
+      <label>Sesi:</label>
+      <select id="q13-sesi" onchange="renderQ13()">
+        <option value="all">Semua Sesi</option>
+        <option value="1">Sesi 1</option>
+        <option value="2">Sesi 2</option>
+      </select>
+    </div>
+    <div>
+      <label>Tampilkan:</label>
+      <select id="q13-limit" onchange="renderQ13()">
+        <option value="10">10 baris</option>
+        <option value="20">20 baris</option>
+        <option value="50">50 baris</option>
+        <option value="all">Semua</option>
+      </select>
+    </div>
+    <div id="q13-count" style="font-size:12px;color:var(--text-muted);margin-left:4px"></div>
+  </div>
+  <div class="query-body">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>No. Pendaftaran</th>
+            <th>Nama Peserta</th>
+            <th>Sesi</th>
+            <th>Skor Rerata</th>
+            <th>Program Studi Diterima</th>
+            <th>Universitas</th>
+          </tr>
+        </thead>
+        <tbody id="q13-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
 const q8Data = {{ q8 | tojson }};
+const q13Data = {{ q13 | tojson }};
 
 function renderQ8() {
-  const sort  = document.getElementById('q8-sort').value;
   const limit = parseInt(document.getElementById('q8-limit').value);
   const tbody = document.getElementById('q8-tbody');
 
-  let data = [...q8Data];
-
-  if (sort === 'abjad') {
-    data.sort((a, b) => a.asal_sekolah.localeCompare(b.asal_sekolah, 'id'));
-  }
-  // 'jumlah' sudah urut dari server (DESC), tidak perlu sort ulang
+  let data = [...q8Data].sort((a, b) =>
+    b.jumlah_lulus - a.jumlah_lulus ||
+    a.asal_sekolah.localeCompare(b.asal_sekolah, 'id')
+  );
 
   data = data.slice(0, limit);
-  const maxVal = q8Data[0]?.jumlah_lulus || 1; // max tetap dari data asli (urutan jumlah)
+  const maxVal = data[0]?.jumlah_lulus || 1;
 
   tbody.innerHTML = data.map((r, i) => `
     <tr>
@@ -640,6 +680,49 @@ function renderQ8() {
   `).join('');
 }
 
-renderQ8(); // render default saat load
+function renderQ13() {
+  const sesi  = document.getElementById('q13-sesi').value;
+  const limit = document.getElementById('q13-limit').value;
+  const tbody = document.getElementById('q13-tbody');
+  const countEl = document.getElementById('q13-count');
+
+  let data = [...q13Data];
+
+  if (sesi !== 'all') {
+    data = data.filter(r => String(r.no_sesi) === sesi);
+  }
+
+  const total = data.length;
+  if (limit !== 'all') {
+    data = data.slice(0, parseInt(limit));
+  }
+
+  countEl.textContent = `Menampilkan ${data.length} dari ${total} peserta lulus`;
+
+  tbody.innerHTML = data.map((r, i) => `
+    <tr>
+      <td class="mono" style="color:var(--text-muted)">${i + 1}</td>
+      <td class="mono" style="color:var(--cyan);font-size:12px">${r.no_pendaftaran}</td>
+      <td style="font-weight:600;color:#fff">${r.nama_peserta}</td>
+      <td>
+        <span class="badge badge-gold" style="font-size:11px">Sesi ${r.no_sesi}</span>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${r.waktu_sesi}</div>
+      </td>
+      <td>
+        <span class="mono" style="font-weight:700;font-size:15px;color:${r.skor_rerata >= 700 ? 'var(--green)' : r.skor_rerata >= 600 ? 'var(--gold)' : 'var(--cyan)'}">
+          ${parseFloat(r.skor_rerata).toFixed(1)}
+        </span>
+      </td>
+      <td>
+        ${r.nama_prodi
+          ? `<span class="badge badge-info">${r.nama_prodi} (${r.jenjang})</span>`
+          : '<span style="color:var(--text-muted)">—</span>'}
+      </td>
+      <td style="font-size:12px;color:var(--text-muted)">${r.nama_univ || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+renderQ8();
+renderQ13();
 </script>
-{% endblock %}

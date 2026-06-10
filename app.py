@@ -1126,12 +1126,27 @@ def analisis():
         ORDER BY jumlah_peserta DESC
         LIMIT 10
     """)
+    q13 = qdb("""
+        SELECT reg.no_pendaftaran, p.nama_peserta,
+               s.no_sesi, s.waktu AS waktu_sesi,
+               h.skor_rerata,
+               prodi.nama_prodi, prodi.jenjang,
+               u.nama_univ
+        FROM peserta p
+        JOIN pendaftaran reg ON p.nisn = reg.nisn
+        JOIN sesi s ON reg.no_sesi = s.no_sesi
+        JOIN hasil_ujian h ON reg.no_pendaftaran = h.no_pendaftaran
+        LEFT JOIN program_studi prodi ON h.id_prodi = prodi.id_prodi
+        LEFT JOIN universitas u ON prodi.id_univ = u.id_univ
+        WHERE h.status = 'Lulus'
+        ORDER BY s.no_sesi ASC, h.skor_rerata DESC
+    """)
 
     return render_template("analisis.html",
                            q1=q1, q2=q2, q3=q3, q4=q4,
                            q5=q5, nisn_cari=nisn_cari,
                            q6=q6, q7=q7, q8=q8, q9=q9,
-                           q10=q10, q11=q11, q12=q12,
+                           q10=q10, q11=q11, q12=q12,q13=q13,
                            q11_json=[dict(r) for r in q11],
                            q3_json=[dict(r) for r in q3])
 
