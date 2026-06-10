@@ -1075,7 +1075,7 @@ def analisis():
         WHERE h.status = 'Lulus'
         GROUP BY p.asal_sekolah
         ORDER BY jumlah_lulus DESC
-        LIMIT 10
+        LIMIT 20
     """)
     q9 = qdb("""
         SELECT prodi.nama_prodi, prodi.jenjang, u.nama_univ,

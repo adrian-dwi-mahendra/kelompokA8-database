@@ -69,6 +69,21 @@
   /* Rasio bar */
   .rasio-bar-wrap { display: flex; align-items: center; gap: 8px; }
   .rasio-bar { height: 6px; border-radius: 3px; background: var(--gold); flex-shrink: 0; }
+
+  /* Q8 Controls */
+  .q8-controls {
+    display: flex; gap: 10px; align-items: center;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(15,23,42,0.4);
+    flex-wrap: wrap;
+  }
+  .q8-controls label { font-size: 12px; color: var(--text-muted); margin-right: 4px; }
+  .q8-controls select {
+    background: var(--navy-3); color: #fff;
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 4px 10px; font-size: 12px; cursor: pointer;
+  }
 </style>
 {% endblock %}
 
@@ -83,7 +98,7 @@
   <div class="query-header">
     <div class="query-num">1</div>
     <div>
-      <h3>Top 10 Peserta Nilai Tertinggi</h3>
+      <h3>Top 20 Peserta Nilai Tertinggi</h3>
       <p>Peserta dengan skor rerata tertinggi yang berstatus Lulus</p>
     </div>
   </div>
@@ -425,27 +440,30 @@
     <div class="query-num">8</div>
     <div>
       <h3>Asal Sekolah dengan Lulusan Terbanyak</h3>
-      <p>10 sekolah dengan kontribusi lulusan SNBT terbanyak</p>
+      <p>Sekolah dengan kontribusi lulusan SNBT terbanyak</p>
+    </div>
+  </div>
+  <div class="q8-controls">
+    <div>
+      <label>Urutan:</label>
+      <select id="q8-sort" onchange="renderQ8()">
+        <option value="jumlah">Jumlah Lulus (Default)</option>
+        <option value="abjad">Alfabetis (A–Z)</option>
+      </select>
+    </div>
+    <div>
+      <label>Tampilkan:</label>
+      <select id="q8-limit" onchange="renderQ8()">
+        <option value="10">10 baris</option>
+        <option value="20">20 baris</option>
+      </select>
     </div>
   </div>
   <div class="query-body">
     <div class="table-wrap">
       <table>
         <thead><tr><th>Rank</th><th>Asal Sekolah</th><th>Jumlah Lulus</th></tr></thead>
-        <tbody>
-          {% for r in q8 %}
-          <tr>
-            <td class="mono" style="color:var(--text-muted)">{{ loop.index }}</td>
-            <td style="font-weight:600;color:#fff">{{ r.asal_sekolah }}</td>
-            <td>
-              <div style="display:flex;align-items:center;gap:10px">
-                <span class="mono" style="color:var(--green);font-weight:700;font-size:16px">{{ r.jumlah_lulus }}</span>
-                <div style="height:6px;border-radius:3px;background:var(--green);opacity:0.7;width:{{ (r.jumlah_lulus / (q8[0].jumlah_lulus if q8 else 1) * 120)|int }}px"></div>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
+        <tbody id="q8-tbody"></tbody>
       </table>
     </div>
   </div>
@@ -590,4 +608,38 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+const q8Data = {{ q8 | tojson }};
+
+function renderQ8() {
+  const sort  = document.getElementById('q8-sort').value;
+  const limit = parseInt(document.getElementById('q8-limit').value);
+  const tbody = document.getElementById('q8-tbody');
+
+  let data = [...q8Data];
+
+  if (sort === 'abjad') {
+    data.sort((a, b) => a.asal_sekolah.localeCompare(b.asal_sekolah, 'id'));
+  }
+  // 'jumlah' sudah urut dari server (DESC), tidak perlu sort ulang
+
+  data = data.slice(0, limit);
+  const maxVal = q8Data[0]?.jumlah_lulus || 1; // max tetap dari data asli (urutan jumlah)
+
+  tbody.innerHTML = data.map((r, i) => `
+    <tr>
+      <td class="mono" style="color:var(--text-muted)">${i + 1}</td>
+      <td style="font-weight:600;color:#fff">${r.asal_sekolah}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="mono" style="color:var(--green);font-weight:700;font-size:16px">${r.jumlah_lulus}</span>
+          <div style="height:6px;border-radius:3px;background:var(--green);opacity:0.7;width:${Math.round(r.jumlah_lulus / maxVal * 120)}px"></div>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+renderQ8(); // render default saat load
+</script>
 {% endblock %}
